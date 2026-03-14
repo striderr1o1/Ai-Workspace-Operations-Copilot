@@ -2,3 +2,5 @@ langchain
 langchain-community
 langchain-text-splitters
 pypdf
+langchain-ollama
+python-dotenv
