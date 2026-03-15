@@ -4,11 +4,10 @@ from langchain_ollama import OllamaEmbeddings
 import os
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
-
 load_dotenv()
 
 class ingestion:
-    def __init__(self, filepath): #configuration
+    def __init__(self, filepath, logging): #configuration
         self.filepath = filepath
         self.loader = PyPDFLoader(self.filepath)
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap = 100)
@@ -17,6 +16,7 @@ class ingestion:
         )
         self.pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
+        self.logger = logging.getLogger(__name__)
 
     def ingest_document(self): #main function
         doc = self._load_document()
@@ -29,26 +29,39 @@ class ingestion:
         return 
 
     def _load_document(self): #load the document
+        self.logger.info('[-] loading document')
         pdf_docs = self.loader.load()
+        self.logger.info('[_/] document loaded')
         return pdf_docs
 
     def _create_chunks(self, document_text):# create the chunks
+        self.logger.info('[-] splitting document')
         chunks = self.text_splitter.split_documents(document_text)
+        self.logger.info('[_/] document split to chunks')
         return chunks
 
     def _convert_doc_chunks_to_str(self, chunks): #convert chunks to string type chunks
+        self.logger.info('[-] converting chunks to string')
         str_chunks = []
         for chunk in chunks:
             string_chunk = str(chunk)
             str_chunks.append(string_chunk)
+            self.logger.info(f'[_/] {len(str_chunks)} converted')
+        self.logger.info('[_/] all chunks converted to string') 
         return str_chunks
 
     def _create_embeddings_from_chunks(self, text_chunks): # create embeddings out of string chunks
+        self.logger.info('[-] converting string chunks to embeddings')
         embeddings = self.embedding.embed_documents(text_chunks) 
+        if not embeddings:
+            self.logger.error('[x] failed to create embeddings')
+            return
+        self.logger.info('[_/] converted string chunks to embeddings')
         return embeddings
 
     def _create_index(self): #initialize index if not already
         if not self.pc.has_index(self.index_name):
+            self.logger.info('[-] creating index ' + self.index_name)
             self.pc.create_index(
                 name=self.index_name,
                 vector_type="dense",
@@ -63,7 +76,10 @@ class ingestion:
                     "environment": "development"
                 }
             )
+            self.logger.info('[_/] created index ' + self.index_name)
+
     def _preparing_ingestions(self, embeddings_list, string_chunks): #prepare vectors for ingestion
+        self.logger.info('[-] preparing vectors')
         length_of_embeddings = len(embeddings_list)
         length_of_chunkslist = len(string_chunks)
         vectors_list = []
@@ -81,14 +97,18 @@ class ingestion:
                     }
                 }
                 vectors_list.append(vector)
+                self.logger.info('[_/] prepared vectors')
         return vectors_list
 
         
     def _store_in_vectordb(self, vectors_list): #upsert in pinecone vector store
         index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
+        self.logger.info('[-] upserting vectors')
         index.upsert(
             namespace = "test-resume",
             vectors = vectors_list
         )
+        self.logger.info('[-] upsertted vectors')
 
         return
+# need to add error handling

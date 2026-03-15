@@ -1,6 +1,10 @@
-#knowledge base agent class
-
 from ingestion import ingestion
+import logging
 
-ingestion_obj = ingestion('resume2-10.pdf')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+ingestion_obj = ingestion('resume2-10.pdf', logging)
 ingestion_obj.ingest_document()
