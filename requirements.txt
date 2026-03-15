@@ -4,3 +4,4 @@ langchain-text-splitters
 pypdf
 langchain-ollama
 python-dotenv
+pinecone
