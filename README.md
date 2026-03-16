@@ -18,5 +18,5 @@ INDEX_URL_PINECONE =
 
 -  test ingestion/retrieval by running and adjusting changes in the file:
 ```bash
-python run KnBaseClass/kb_tools.py
+python KnBaseClass/kb_tools.py
 ```
