@@ -14,3 +14,8 @@ PINECONE_API_KEY =
 PINECONE_INDEX_NAME =
 INDEX_URL_PINECONE =
 ```
+
+-  test ingestion/retrieval by running and adjusting changes in the file:
+```bash
+python run KnBaseClass/kb_tools.py
+```
