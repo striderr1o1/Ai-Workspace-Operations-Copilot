@@ -9,7 +9,8 @@ pip install -r requirements.txt
 ```
 - Setup the .env file:
 
-```EMBEDDING_MODEL = mxbai-embed-large:latest
+```
+EMBEDDING_MODEL = mxbai-embed-large:latest
 PINECONE_API_KEY =
 PINECONE_INDEX_NAME =
 INDEX_URL_PINECONE =
