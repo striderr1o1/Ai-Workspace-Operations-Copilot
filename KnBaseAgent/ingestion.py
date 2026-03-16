@@ -7,9 +7,8 @@ from pinecone import Pinecone, ServerlessSpec
 load_dotenv()
 
 class ingestion:
-    def __init__(self, filepath, logging): #configuration
-        self.filepath = filepath
-        self.loader = PyPDFLoader(self.filepath)
+    def __init__(self, logging): #configuration
+        self.filepath = None
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap = 100)
         self.embedding = OllamaEmbeddings(
             model=os.environ.get("EMBEDDING_MODEL")
@@ -18,7 +17,9 @@ class ingestion:
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
         self.logger = logging.getLogger(__name__)
 
-    def ingest_document(self): #main function
+    def ingest_document(self, filepath):
+         #main function
+        self.filepath = filepath
         doc = self._load_document()
         chunks = self._create_chunks(doc) 
         str_chunks = self._convert_doc_chunks_to_str(chunks)
@@ -29,6 +30,7 @@ class ingestion:
         return 
 
     def _load_document(self): #load the document
+        self.loader = PyPDFLoader(self.filepath)
         self.logger.info('[-] loading document')
         pdf_docs = self.loader.load()
         self.logger.info('[_/] document loaded')
