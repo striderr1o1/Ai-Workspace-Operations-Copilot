@@ -3,7 +3,7 @@ from langchain_ollama import OllamaEmbeddings
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 load_dotenv()
-class retrieval:
+class Retrieval:
     def __init__(self):
         self.pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
@@ -15,7 +15,6 @@ class retrieval:
     def retrieve(self, query):
         embeddings = self._create_embeddings(query)
         results = self._get_results(embeddings)
-        print(results)
         return results
     
     def _create_embeddings(self, query):

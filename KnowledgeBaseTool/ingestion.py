@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 load_dotenv()
 
-class ingestion:
+class Ingestion:
     def __init__(self): #configuration
         self.filepath = None
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap = 100)
