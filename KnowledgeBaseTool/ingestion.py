@@ -35,6 +35,7 @@ class Ingestion:
 
     def _create_chunks(self, document_text):# create the chunks
         chunks = self.text_splitter.split_documents(document_text)
+        print(len(chunks))
         return chunks
 
     def _convert_doc_chunks_to_str(self, chunks): #convert chunks to string type chunks
