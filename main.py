@@ -16,6 +16,6 @@ tools = [ingest_documents, retrieve_documents]
 agent = create_agent(llm, tools = tools, system_prompt="""You are a knowledge base management agent.
 Your job is two things: ingest documents when you receive them using the available ingest_documents tool, and the other task is to
 retrieve relevant context using the retrieve_documents tool, and answer based on the retrieved context.""")
-
-result = agent.invoke({"messages": [{"role": "user", "content": "Can you fetch some data related to Ai?"}]})
+docs = ['NexaCore_Organization_Report.pdf']
+result = agent.invoke({"messages": [{"role": "user", "content": f"Can you ingest these documents? {docs}"}]})
 print(result)
