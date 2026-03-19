@@ -15,6 +15,7 @@ class Ingestion:
         )
         self.pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
+        self._create_index()
 
     def ingest_document(self, filepath):
          #main function
@@ -23,7 +24,6 @@ class Ingestion:
         chunks = self._create_chunks(doc) 
         str_chunks, metadatas = self._convert_doc_chunks_to_str(chunks)
         embeddings_list = self._create_embeddings_from_chunks(str_chunks)
-        self._create_index()
         vectors_list = self._preparing_ingestions(embeddings_list, str_chunks, metadatas)
         self._store_in_vectordb(vectors_list)
         return 
