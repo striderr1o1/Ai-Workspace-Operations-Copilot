@@ -17,7 +17,8 @@ agent = create_agent(llm, tools = tools, system_prompt="""You are a knowledge ba
 Your job is two things: ingest documents when you receive them using the available ingest_documents tool, and the other task is to
 retrieve relevant context using the retrieve_documents tool, and answer based on the retrieved context.""")
 docs = ['NexCore_Office_Workspace_Report.pdf']
-result = agent.invoke({"messages": [{"role": "user", "content": f"What about the traffic flow analysis?"}]})
+result = agent.invoke({"messages": [{"role": "user", "content": f"can you tell me about NexCore Technologies? their colour scheme?"}]})
+print(result)
 messages = result.get('message', [])
 for msg in messages:
     # Check for AI messages

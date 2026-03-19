@@ -9,7 +9,7 @@ load_dotenv()
 class Ingestion:
     def __init__(self): #configuration
         self.filepath = None
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap = 100)
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap = 200)
         self.embedding = OllamaEmbeddings(
             model=os.environ.get("EMBEDDING_MODEL")
         )
@@ -21,10 +21,10 @@ class Ingestion:
         self.filepath = filepath
         doc = self._load_document()
         chunks = self._create_chunks(doc) 
-        str_chunks = self._convert_doc_chunks_to_str(chunks)
+        str_chunks, metadatas = self._convert_doc_chunks_to_str(chunks)
         embeddings_list = self._create_embeddings_from_chunks(str_chunks)
         self._create_index()
-        vectors_list = self._preparing_ingestions(embeddings_list, str_chunks)
+        vectors_list = self._preparing_ingestions(embeddings_list, str_chunks, metadatas)
         self._store_in_vectordb(vectors_list)
         return 
 
@@ -35,15 +35,21 @@ class Ingestion:
 
     def _create_chunks(self, document_text):# create the chunks
         chunks = self.text_splitter.split_documents(document_text)
-        print(len(chunks))
+        # need to only convert page content to string
+        
         return chunks
 
     def _convert_doc_chunks_to_str(self, chunks): #convert chunks to string type chunks
         str_chunks = []
+        metadatas = []
         for chunk in chunks:
-            string_chunk = str(chunk)
+            string_chunk = str(chunk.page_content)
             str_chunks.append(string_chunk)
-        return str_chunks
+            #adding string chunk in metadata
+            chunk.metadata["chunk_text"] = string_chunk
+            metadatas.append(chunk.metadata)
+
+        return str_chunks, metadatas
 
     def _create_embeddings_from_chunks(self, text_chunks): # create embeddings out of string chunks
         embeddings = self.embedding.embed_documents(text_chunks) 
@@ -69,7 +75,7 @@ class Ingestion:
                 }
             )
 
-    def _preparing_ingestions(self, embeddings_list, string_chunks): #prepare vectors for ingestion
+    def _preparing_ingestions(self, embeddings_list, string_chunks, metadatas): #prepare vectors for ingestion
         length_of_embeddings = len(embeddings_list)
         length_of_chunkslist = len(string_chunks)
         vectors_list = []
@@ -78,14 +84,8 @@ class Ingestion:
                 vector = {
                     'id': f'document1#chunk: {i}',
                     "values": embeddings_list[i],
-                    "metadata": {
-                            "document_id": f'document1#chunk: {i}',
-                            "document_title": "resume",
-                            "chunk_number": i+1,
-                            "chunk_text": string_chunks[i],
-                            "document_type": ""
-                    }
-                }
+                    "metadata": metadatas[i]
+                        }
                 vectors_list.append(vector)
         return vectors_list
 
