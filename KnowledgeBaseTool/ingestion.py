@@ -82,7 +82,7 @@ class Ingestion:
         if length_of_chunkslist == length_of_embeddings:
             for i in range(0, length_of_chunkslist):
                 vector = {
-                    'id': f'document1#chunk: {i}',
+                    'id': f'{metadatas[i]["source"]}#chunk: {i}',
                     "values": embeddings_list[i],
                     "metadata": metadatas[i]
                         }
