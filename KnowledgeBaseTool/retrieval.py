@@ -2,6 +2,7 @@ import os
 from langchain_ollama import OllamaEmbeddings
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
+from utils.exceptions import RetrievalError
 load_dotenv()
 class Retrieval:
     def __init__(self):
@@ -18,17 +19,23 @@ class Retrieval:
         return results
     
     def _create_embeddings(self, query):
-        embeddings = self.embedding.embed_query(query) 
-        return embeddings
+        try:
+            embeddings = self.embedding.embed_query(query) 
+            return embeddings
+        except Exception:
+            raise RetrievalError('retrieval.py: error in creating retrieval embeddings')
     def _get_results(self, embeddings):
-        index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
+        try:
+            index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
        
-        results = index.query(
-            namespace='test-resume',
-            vector=embeddings, 
-            top_k=3,
-            include_metadata=True,
-            include_values=False
-        )
+            results = index.query(
+                namespace='test-resume',
+                vector=embeddings, 
+                top_k=3,
+                include_metadata=True,
+                include_values=False
+            )
  
-        return results
+            return results
+        except Exception:
+            raise RetrievalError('retrieval.py: Error in getting retrieval results')
