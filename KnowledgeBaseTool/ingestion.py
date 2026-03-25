@@ -109,11 +109,13 @@ class Ingestion:
         
     def _store_in_vectordb(self, vectors_list): #upsert in pinecone vector store
         try:
+            batch_size = 100
             index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
-            index.upsert(
-                namespace = "test-resume",
-                vectors = vectors_list
-            )
+            for i in range(0, len(vectors_list), batch_size):
+                index.upsert(
+                    namespace = "test-resume",
+                    vectors = vectors_list[i: i+batch_size]
+                )
     
             return
         except Exception:
