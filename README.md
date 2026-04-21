@@ -24,11 +24,6 @@ export LANGSMITH_PROJECT=""
 GROQ_API_KEY =
 ```
 
--  test ingestion/retrieval by running and adjusting changes in the file:
-```bash
-python KnBaseClass/kb_tools.py
-```
-
 ## Implementation Thought Process:
 First I implemented the Ingestion class. In that class, I implemented all the ingestion related functions. I faced a few problems, for example:
 - the chunks were not in string format and the next function was not accepting it, so i had to convert them to string manually using a for loop
