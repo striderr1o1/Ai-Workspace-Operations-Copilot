@@ -1,21 +1,9 @@
-from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents
-from langchain_groq import ChatGroq
-from langchain.agents import create_agent
+from fastapi import FastAPI
+from agents.agent import initialize_agent
+app = FastAPI()
+agent = initialize_agent()
 
-llm = ChatGroq(
-    model="qwen/qwen3-32b",
-    temperature=0,
-    max_tokens=None,
-    reasoning_format="parsed",
-    timeout=None,
-    max_retries=2
-)
-
-tools = [ingest_documents, retrieve_documents]
-
-agent = create_agent(llm, tools = tools, system_prompt="""You are a knowledge base management agent.
-Your job is two things: ingest documents when you receive them using the available ingest_documents tool, and the other task is to
-retrieve relevant context using the retrieve_documents tool, and answer based on the retrieved context.""")
-docs = ['NexCore_Office_Workspace_Report.pdf']
-result = agent.invoke({"messages": [{"role": "user", "content": f"Can you ingest {docs}"}]})
-print(result)
+@app.post("/query")
+async def query_agent(request: str):
+    result = agent.invoke({"messages": [{"role": "user", "content": f"{request}"}]})
+    return result

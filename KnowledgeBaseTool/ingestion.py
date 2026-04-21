@@ -55,6 +55,7 @@ class Ingestion:
                 #adding string chunk in metadata
                 chunk.metadata["chunk_text"] = string_chunk
                 metadatas.append(chunk.metadata)
+                print(len(str_chunks))
     
             return str_chunks, metadatas
         except Exception:
@@ -64,6 +65,7 @@ class Ingestion:
     def _create_embeddings_from_chunks(self, text_chunks): # create embeddings out of string chunks
         try:
             embeddings = self.embedding.embed_documents(text_chunks) 
+            print("Embedding")
             return embeddings
         except Exception:
             raise IngestionError('Error in creating embeddings, ingestion.py,_create_embeddings_from_chunks()')
