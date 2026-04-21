@@ -31,7 +31,7 @@ class Retrieval:
             results = index.query(
                 namespace='test-resume',
                 vector=embeddings, 
-                top_k=7,
+                top_k=5,
                 include_metadata=True,
                 include_values=False
             )

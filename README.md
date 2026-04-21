@@ -5,10 +5,11 @@
 - Get the pinecone API key
 - Get GROQ API key
 - Install the requirements (python 3.11)
+- Setup the .env file:
 ```bash
 pip install -r requirements.txt
+uvicorn main:app --reload
 ```
-- Setup the .env file:
 
 ```
 EMBEDDING_MODEL = mxbai-embed-large:latest
@@ -37,4 +38,3 @@ First I implemented the Ingestion class. In that class, I implemented all the in
 
 ## Issues:
 - Need to fix namespace @ingestion.py line 96, it is hardcoded
-- need to add error handling
