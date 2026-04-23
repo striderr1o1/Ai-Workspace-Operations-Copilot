@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from agents.agent import initialize_agent
+from agents.KBagent import initialize_agent
 app = FastAPI()
 agent = initialize_agent()
 
@@ -7,3 +7,5 @@ agent = initialize_agent()
 async def query_agent(request: str):
     result = agent.invoke({"messages": [{"role": "user", "content": f"{request}"}]})
     return result
+
+

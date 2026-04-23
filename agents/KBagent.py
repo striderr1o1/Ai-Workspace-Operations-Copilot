@@ -11,7 +11,7 @@ llm = ChatGroq(
     max_retries=2
 )
 
-tools = [ingest_documents, retrieve_documents]
+tools = [retrieve_documents]
 
 agent = create_agent(llm, tools = tools, system_prompt="""You are a knowledge base management agent.
 Your job is two things: ingest documents when you receive them using the available ingest_documents tool, and the other task is to
