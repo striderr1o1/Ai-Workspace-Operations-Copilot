@@ -10,3 +10,4 @@ fastapi[standard]
 mcp[cli]
 httpx
 langgraph
+ollama
