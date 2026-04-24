@@ -39,9 +39,11 @@ class knowledge_base_agent:
         'end' the loop or craft queries that will be fired on a knowledge base, which will grant you access to 
         the results and you can deliver insights. You will not call tools yourself, but the text output
         you give determines the tool call. If you output anything other than 'end' it is taken to tool and fired on it"""
-
+        
+        #creating new list with system prompt, passing that to the llm on each iteration
         msg_list = [{"role": "system", "content": system_prompt}] + state["messages"]
-
+        
+        #if retrieval was made, add that also
         if state["retrieve_decision"] == True:
             msg_list.append({"role": "user", "content": f"search results: {state['retrieval_results']}"})
 
@@ -50,6 +52,7 @@ class knowledge_base_agent:
              model="llama-3.3-70b-versatile"
          )
         state["retrieval_query"] = chat_completion.choices[0].message.content
+        #adding response to state
         state["messages"].append({"role": "assistant", "content": state["retrieval_query"]})
         print(state["retrieve_decision"])
         return state
@@ -63,7 +66,7 @@ class knowledge_base_agent:
         
     def retrieval_node(self, state: kb_agent_state):
         state["retrieval_results"] = retrieve_documents(state["retrieval_query"])
-        print(state["retrieval_results"])
         return state
+
 
 
