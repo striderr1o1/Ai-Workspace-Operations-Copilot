@@ -7,7 +7,16 @@ from typing_extensions import TypedDict
 from typing import Annotated
 # initialize graph
 # nodes - CRUD operations
+# state:
+# messages
+# tools available
+# tool call name 
 
+# this one needs to be implemented
+# orchestrator 
+# output in json -> tool call: true/false, tool name, reasoning
+# conditional node -> get true -> tool node, execute tool calls one by one -> set tool calls
+#
 class kb_agent_state(TypedDict):
     messages: list
     retrieve_decision: bool
@@ -33,12 +42,7 @@ class knowledge_base_agent:
         return self.graph
 
     def orchestrator_node(self, state: kb_agent_state):
-        system_prompt = """You are a knowledge base assistant. Your sole task is to 
-        analyze requirements, craft search query if required or simply return 'end' as 
-        output if no further research is required. You cannot ask the user any question, only you can
-        'end' the loop or craft queries that will be fired on a knowledge base, which will grant you access to 
-        the results and you can deliver insights. You will not call tools yourself, but the text output
-        you give determines the tool call. If you output anything other than 'end' it is taken to tool and fired on it"""
+        system_prompt = """"""
         
         #creating new list with system prompt, passing that to the llm on each iteration
         msg_list = [{"role": "system", "content": system_prompt}] + state["messages"]
@@ -49,7 +53,7 @@ class knowledge_base_agent:
 
         chat_completion = self.llm_client.chat.completions.create(
              messages=msg_list,
-             model="llama-3.3-70b-versatile"
+             model="openai/gpt-oss-20b:free"
          )
         state["retrieval_query"] = chat_completion.choices[0].message.content
         #adding response to state
