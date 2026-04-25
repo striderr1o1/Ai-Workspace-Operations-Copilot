@@ -1,1 +1,1 @@
-from .KBagent import knowledge_base_agent
+from .KBagent import agentic_workflow

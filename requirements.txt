@@ -11,3 +11,5 @@ mcp[cli]
 httpx
 langgraph
 ollama
+langchain-openrouter
+instructor
