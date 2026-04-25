@@ -13,3 +13,4 @@ langgraph
 ollama
 langchain-openrouter
 instructor
+supabase
