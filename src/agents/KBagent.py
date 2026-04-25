@@ -56,18 +56,25 @@ class agentic_workflow:
                         "argument":[]
 
                     }}
-                }}
+                }}, you must also include the json curly braces
                 """
         response = self.llm_client.chat.completions.create(
-                
+
             model="openai/gpt-oss-120b:free",
             messages=[{"role": "system", "content": system_prompt}] + state["messages"],
             response_model=orchestrator_output,
         )
-        print(response)
+        json_response = response.model_dump()
+        # getting llm reasoning from response and pushing it to messages state
+        state["messages"].append({"role": "assistant", "content": json_response["reasoning"]})
+        #storing tool calls 
+        state["tool_calls"] = response.model_dump()["tool_calls"]
         return state
 
     def tool_call_node(self, state: graph_state):
+        for toolcall in state["tool_calls"]:
+            if toolcall["tool"] == "knowledge_base_agent":
+                response = self.knowledge_base_agent(state)
         return "knowledge_base_agent"
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
