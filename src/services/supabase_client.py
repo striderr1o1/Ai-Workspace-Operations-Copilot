@@ -10,6 +10,7 @@ supabase: Client = create_client(supabase_url, supabase_apikey)
 
 
 def fetch_room_data():
+    """Fetch room data to check if which rooms are available"""
     response = (supabase.table("rooms")
     .select("*")
     .execute())
@@ -24,3 +25,5 @@ def delete_room_data():
 
 def create_room_data():
     return
+
+

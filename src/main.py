@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from agents.KBagent import agentic_workflow
+from agents.agent import agentic_workflow
+from agents.agent_config import get_kb_agent, get_booking_agent
 from openai import OpenAI
 import os
 import instructor
@@ -14,17 +15,20 @@ client = instructor.from_openai(
     ),
     mode=instructor.Mode.JSON,
         )
-agent = agentic_workflow(llm_client=client)
+kb_agent = get_kb_agent()
+booking_agent = get_booking_agent()
+agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, booking_agent=booking_agent)
 graph = agent.get_graph()
 
 @app.post("/query")
 async def query_agent(request: str):
     result = graph.invoke({
         "messages": [{"role": "user", "content": request}],
-        "agent_calls": [],
+        "tool_calls": [],
         "knowledge_base_agent_output": "",
         "booking_agent_output": "",
         "finance_agent_output": "",
+        "return_to_user_decision": False,
     })
     return result
 
