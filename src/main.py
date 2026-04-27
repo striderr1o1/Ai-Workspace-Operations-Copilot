@@ -17,7 +17,7 @@ client = instructor.from_openai(
         )
 kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()
-agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, booking_agent=booking_agent)
+agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent)
 graph = agent.get_graph()
 
 @app.post("/query")
