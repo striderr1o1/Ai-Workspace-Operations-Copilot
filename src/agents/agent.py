@@ -1,6 +1,6 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
+from .agent_config import get_chat_completion, get_chat_completion_system_prompt
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents
 from langgraph.graph import StateGraph, START, END
 from typing import Annotated
@@ -32,42 +32,14 @@ class agentic_workflow:
 
     def orchestrator(self, state: graph_state) -> graph_state:
         state["tool_calls"].clear()
-        system_prompt = f"""You are an orchestrator agent.
-                You have access to the following agents:
-                {self.available_tools}
-                ...
-                You will call agents based on user requirement and deliver the answer.
-                Avoid excessive question, do as youre told. Give response in the following
-                json format: 
-                reasoning: str, tool_calls: list  -> this must be in json format. Dont add
-                any other character or symbol... dont add backticks``, use the json brackets 
-                instead...
-                use this json format:
-                {{
-                    "reasoning": "...",
-                    "tool_calls": [{{
-                        "tool": ...,
-                        "argument":[]
-
-                    }}],
-                    "return_to_user": true/false
-                }}, you must also include the json curly braces
-
-                do not exceed more than 2 iterations or if the agents/tools have returned
-                their results, then just stop and return to user
-                """
-        response = self.llm_client.chat.completions.create(
-
-            model="openai/gpt-oss-120b:free",
-            messages=[{"role": "system", "content": system_prompt}] + state["messages"] + [{"role": "user", "content": f"""Agent outputs — 
-                    knowledge_base_agent: {state['knowledge_base_agent_output']}, booking_agent: {state['booking_agent_output']},
-                    finance_agent: {state['finance_agent_output']}"""}],
-            response_model=orchestrator_output,
-        )
+        system_promptt = get_chat_completion_system_prompt(self.available_tools)
+       
+        response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b:free", response_model=orchestrator_output, system_prompt = system_promptt)
         json_response = response.model_dump()
         # getting llm reasoning from response and pushing it to messages state
         state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
-                                  ..agent/tool calls: {json_response['tool_calls']}"""})
+        _                         ..agent/tool calls: {json_response['tool_calls']}"""})
+        
         #storing tool calls 
         state["tool_calls"] = response.model_dump()["tool_calls"]
         state["return_to_user_decision"] = response.model_dump()["return_to_user"]

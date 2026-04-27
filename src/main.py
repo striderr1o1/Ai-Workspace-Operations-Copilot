@@ -1,20 +1,10 @@
 from fastapi import FastAPI
 from agents.agent import agentic_workflow
-from agents.agent_config import get_kb_agent, get_booking_agent
-from openai import OpenAI
-import os
-import instructor
-from dotenv import load_dotenv
-load_dotenv()
+from agents.agent_config import get_kb_agent, get_booking_agent, get_subagents_client
 
 app = FastAPI()
-client = instructor.from_openai(
-         OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ.get("OPENROUTER_API_KEY"),
-    ),
-    mode=instructor.Mode.JSON,
-        )
+
+client = get_subagents_client()
 kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()
 agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent)
