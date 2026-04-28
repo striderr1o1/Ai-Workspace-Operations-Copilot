@@ -21,7 +21,7 @@ class agentic_workflow:
                                          {
                                             "knowledge_base_agent":"knowledge_base_agent",
                                             "end": END,
-                                            "orchestrator": "orchestrator"
+                                            "orchestrator": "orchestrator" # issues over here, need to fix this later
 
                                          })
         self.compiled_graph = self.graph.compile()
@@ -33,13 +33,11 @@ class agentic_workflow:
     def orchestrator(self, state: graph_state) -> graph_state:
         state["tool_calls"].clear()
         system_promptt = get_chat_completion_system_prompt(self.available_tools)
-       
         response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b:free", response_model=orchestrator_output, system_prompt = system_promptt)
         json_response = response.model_dump()
         # getting llm reasoning from response and pushing it to messages state
         state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
         _                         ..agent/tool calls: {json_response['tool_calls']}"""})
-        
         #storing tool calls 
         state["tool_calls"] = response.model_dump()["tool_calls"]
         state["return_to_user_decision"] = response.model_dump()["return_to_user"]
@@ -54,8 +52,6 @@ class agentic_workflow:
                 response = self.knowledge_base_agent(state)
             if toolcall["tool"] == "booking_agent":
                 response_b = self.booking_agent(state)
-
-
         return "end"
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
@@ -63,7 +59,6 @@ class agentic_workflow:
         for toolcall in state["tool_calls"]:
             if toolcall["tool"] == "knowledge_base_agent":
                 query = toolcall["argument"]
-        
         response = self.kb_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         state["knowledge_base_agent_output"] = response
 #        print(state["knowledge_base_agent_output"]) need to fix this to return just the text including raw chunks and model response
@@ -74,7 +69,6 @@ class agentic_workflow:
         for toolcall in state["tool_calls"]:
             if toolcall["tool"] == "booking_agent":
                 query = toolcall["argument"]
-
         response = self.bk_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         state["booking_agent_output"] = response
         return state

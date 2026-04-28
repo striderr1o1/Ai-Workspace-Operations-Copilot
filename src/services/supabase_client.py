@@ -17,8 +17,20 @@ def fetch_room_data():
     print(response)
     return response
 
-def update_room_data():
-    
+def update_room_data(Json_object):
+    """Update room data in the database.
+
+    The json parameter must match the 'rooms' table schema:
+        - room_id (int4): primary key, required to identify which room to update
+        - occupier_name (text): name of the person occupying the room
+        - occupied_status (bool): whether the room is currently occupied
+        - start_time (time): reservation start time
+        - end_time (time): reservation end time
+        - reservation_date (date): date of the reservation
+    """
+    response = (supabase.table('rooms')
+                .upsert(Json_object)
+                .execute())
     return
 
 def delete_room_data():
