@@ -6,6 +6,8 @@
 - Get GROQ API key
 - Install the requirements (python 3.11)
 - Setup the .env file:
+- Get the relevant api keys (groq and openrouter)
+- setup the supabase database, connect the url and the key.
 ```bash
 pip install -r requirements.txt
 uvicorn main:app --reload
