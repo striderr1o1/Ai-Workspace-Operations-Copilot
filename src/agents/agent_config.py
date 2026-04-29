@@ -39,6 +39,12 @@ def get_booking_agent():
             )
     return agent
 
+def get_finance_agent():
+    agent = create_agent(
+            model = llm, 
+            )
+    return agent
+
 def get_chat_completion_system_prompt(available_tools):
     prompt = f"""You are an orchestrator agent.
                 You have access to the following agents:

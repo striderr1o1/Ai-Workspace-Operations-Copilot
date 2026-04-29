@@ -52,6 +52,7 @@ class agentic_workflow:
                 response = self.knowledge_base_agent(state)
             if toolcall["tool"] == "booking_agent":
                 response_b = self.booking_agent(state)
+        state["tool_calls"].clear()
         return "end"
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
@@ -60,8 +61,8 @@ class agentic_workflow:
             if toolcall["tool"] == "knowledge_base_agent":
                 query = toolcall["argument"]
         response = self.kb_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
-        state["knowledge_base_agent_output"] = response
-#        print(state["knowledge_base_agent_output"]) need to fix this to return just the text including raw chunks and model response
+        summary = response["messages"][-1].content
+        state["knowledge_base_agent_output"] = summary
         return state
 
     def booking_agent(self, state: graph_state)-> graph_state:
@@ -71,6 +72,7 @@ class agentic_workflow:
                 query = toolcall["argument"]
         response = self.bk_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         state["booking_agent_output"] = response
+        print(state["booking_agent_output"])
         return state
 
     #need to check how to end the workflow add tool_call_node
