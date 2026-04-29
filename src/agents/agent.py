@@ -19,7 +19,6 @@ class agentic_workflow:
         self.graph.add_edge(START, "orchestrator")
         self.graph.add_conditional_edges("orchestrator", self.tool_call_node,
                                          {
-                                            "knowledge_base_agent":"knowledge_base_agent",
                                             "end": END,
                                             "orchestrator": "orchestrator" # issues over here, need to fix this later
 
@@ -35,13 +34,14 @@ class agentic_workflow:
         system_promptt = get_chat_completion_system_prompt(self.available_tools)
         response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b:free", response_model=orchestrator_output, system_prompt = system_promptt)
         json_response = response.model_dump()
+        if json_response["return_to_user"] == True:
+            state["return_to_user_decision"] = True
         # getting llm reasoning from response and pushing it to messages state
         state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
-        _                         ..agent/tool calls: {json_response['tool_calls']}"""})
+        _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
         #storing tool calls 
         state["tool_calls"] = response.model_dump()["tool_calls"]
         state["return_to_user_decision"] = response.model_dump()["return_to_user"]
-        print(json_response)
         return state
 
     def tool_call_node(self, state: graph_state):
@@ -54,6 +54,7 @@ class agentic_workflow:
                 response_b = self.booking_agent(state)
         state["tool_calls"].clear()
         return "end"
+    # the issue: this is a conditional node, so inside of it, updating the state does not work, as far as i understood
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
         query =""
@@ -71,8 +72,7 @@ class agentic_workflow:
             if toolcall["tool"] == "booking_agent":
                 query = toolcall["argument"]
         response = self.bk_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
-        state["booking_agent_output"] = response
-        print(state["booking_agent_output"])
+        state["booking_agent_output"] = response["messages"][-1].content
         return state
 
     #need to check how to end the workflow add tool_call_node

@@ -66,18 +66,29 @@ def get_chat_completion_system_prompt(available_tools):
                     }}],
                     "return_to_user": true/false
                 }}, you must also include the json curly braces
+                
+                you will also be provided the responses of sub agents... if the agents have given there results, you will decide to return to the user using the "return_to_user" by setting it to true
+                
+                - for rooms and reservations related queries, use the booking_agent
+                - for retrieval or general knowledge, use the knowledge_base_agent
+                - do not answer on your own without calling sub agents
+                - do not pass more than one argument in one tool, for example {{"tool": "booking_agent", "argument": ['pass query in this argument as a single string, dont pass more than one string/query, in essence, this list must contain only one element]
+                - you can communicate with the agent through the argument inside of tool in the tool_calls, for example:
 
-                do not exceed more than 2 iterations or if the agents/tools have returned
-                their results, then just stop and return to user
+                user asks: Fetch me room 1 data...
+                your response: 
+                {{'reasoning': 'The user wants to fetch room data, which can be done using the booking agent. I will call the booking_agent tool to retrieve the room information.', 'tool_calls': [{{'tool': 'booking_agent', 'argument': ['fetch room data relating to room 1]}}], 'return_to_user': False}}
+
+
                 """
     return prompt
 
 def get_chat_completion(llm_client, state, model, response_model, system_prompt):
+    print(state)
     response = llm_client.chat.completions.create(
                model=model,
-               messages=[{"role": "system", "content": system_prompt}] + state["messages"] + [{"role": "user", "content": f"""Agent outputs — 
-                        knowledge_base_agent: {state['knowledge_base_agent_output']}, booking_agent: {state['booking_agent_output']},
-                        finance_agent: {state['finance_agent_output']}"""}],
+               messages=[{"role": "system", "content": system_prompt}] + state["messages"] + [{"role": "assistant", "content": f"""Agent outputs — 
+                        knowledge_base_agent: {state['knowledge_base_agent_output']}, booking_agent: {state['booking_agent_output']}"""}],
                response_model=response_model,
                )
 

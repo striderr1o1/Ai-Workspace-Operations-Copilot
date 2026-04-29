@@ -14,7 +14,6 @@ def fetch_room_data():
     response = (supabase.table("rooms")
     .select("*")
     .execute())
-    print(response)
     return response
 
 def update_room_data(Json_object):
