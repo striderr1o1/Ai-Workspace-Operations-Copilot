@@ -1,3 +1,4 @@
+from graphlib import TopologicalSorter
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from .agent_config import get_chat_completion, get_chat_completion_system_prompt
@@ -16,12 +17,28 @@ class agentic_workflow:
         self.graph = StateGraph(graph_state)
         self.graph.add_node("orchestrator", self.orchestrator)
         self.graph.add_node("knowledge_base_agent", self.knowledge_base_agent)
+        self.graph.add_node("booking_agent", self.booking_agent)
         self.graph.add_edge(START, "orchestrator")
         self.graph.add_conditional_edges("orchestrator", self.tool_call_node,
                                          {
                                             "end": END,
-                                            "orchestrator": "orchestrator" # issues over here, need to fix this later
-
+                                            "knowledge_base_agent": "knowledge_base_agent",
+                                            "booking_agent": "booking_agent",
+                                            "orchestrator": "orchestrator"
+                                         })
+        self.graph.add_conditional_edges("knowledge_base_agent", self.tool_call_node,
+                                         {
+                                            "end": END,
+                                            "knowledge_base_agent": "knowledge_base_agent",
+                                            "booking_agent": "booking_agent",
+                                            "orchestrator": "orchestrator"
+                                         })
+        self.graph.add_conditional_edges("booking_agent", self.tool_call_node,
+                                         {
+                                            "end": END,
+                                            "knowledge_base_agent": "knowledge_base_agent",
+                                            "booking_agent": "booking_agent",
+                                            "orchestrator": "orchestrator"
                                          })
         self.compiled_graph = self.graph.compile()
         return
@@ -40,27 +57,32 @@ class agentic_workflow:
         state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
         _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
         #storing tool calls 
+        print(json_response)
         state["tool_calls"] = response.model_dump()["tool_calls"]
         state["return_to_user_decision"] = response.model_dump()["return_to_user"]
         return state
 
     def tool_call_node(self, state: graph_state):
+        print(state)
         if state["return_to_user_decision"] == True:
             return "end"
-        for toolcall in state["tool_calls"]:
+        if len(state["tool_calls"]) != 0:
+            toolcall = state["tool_calls"][0]
             if toolcall["tool"] == "knowledge_base_agent":
-                response = self.knowledge_base_agent(state) # return the knowledge base agent, its node run, then back to toolnode, then booking_agent runs, then back to tool node, on each agent node, pop the tool call/remove it from the list, if empty return to user
+                return "knowledge_base_agent"
             if toolcall["tool"] == "booking_agent":
-                response_b = self.booking_agent(state)
-        state["tool_calls"].clear()
+                return "booking_agent"
         return "end"
+# return the knowledge base agent, its node run, then back to toolnode, then booking_agent runs, then back to tool node, on each agent node, pop the tool call/remove it from the list, if empty return to user
+        #state["tool_calls"].clear()
     # the issue: this is a conditional node, so inside of it, updating the state does not work, as far as i understood
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
         query =""
-        for toolcall in state["tool_calls"]:
-            if toolcall["tool"] == "knowledge_base_agent":
-                query = toolcall["argument"]
+        toolcall = state["tool_calls"][0]
+        if toolcall["tool"] == "knowledge_base_agent":
+            query = toolcall["argument"][0]
+            state["tool_calls"].remove(toolcall) 
         response = self.kb_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         summary = response["messages"][-1].content
         state["knowledge_base_agent_output"] = summary
@@ -68,9 +90,10 @@ class agentic_workflow:
 
     def booking_agent(self, state: graph_state)-> graph_state:
         query =""
-        for toolcall in state["tool_calls"]:
-            if toolcall["tool"] == "booking_agent":
-                query = toolcall["argument"]
+        toolcall = state["tool_calls"][0]
+        if toolcall["tool"] == "booking_agent":
+            query = toolcall["argument"][0]
+            state["tool_calls"].remove(toolcall) 
         response = self.bk_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         state["booking_agent_output"] = response["messages"][-1].content
         return state
