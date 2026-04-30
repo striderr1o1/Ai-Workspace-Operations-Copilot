@@ -49,7 +49,7 @@ class agentic_workflow:
             return "end"
         for toolcall in state["tool_calls"]:
             if toolcall["tool"] == "knowledge_base_agent":
-                response = self.knowledge_base_agent(state)
+                response = self.knowledge_base_agent(state) # return the knowledge base agent, its node run, then back to toolnode, then booking_agent runs, then back to tool node, on each agent node, pop the tool call/remove it from the list, if empty return to user
             if toolcall["tool"] == "booking_agent":
                 response_b = self.booking_agent(state)
         state["tool_calls"].clear()
