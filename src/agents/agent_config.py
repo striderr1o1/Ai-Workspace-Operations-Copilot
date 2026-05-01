@@ -64,7 +64,8 @@ def get_chat_completion_system_prompt(available_tools):
                         "argument":[]
 
                     }}],
-                    "return_to_user": true/false
+                    "return_to_user": true/false,
+                    "summary_of_agents_response": ""
                 }}, you must also include the json curly braces
                 
                 you will also be provided the responses of sub agents... if the agents have given there results, you will decide to return to the user using the "return_to_user" by setting it to true
@@ -79,12 +80,12 @@ def get_chat_completion_system_prompt(available_tools):
                 your response: 
                 {{'reasoning': 'The user wants to fetch room data, which can be done using the booking agent. I will call the booking_agent tool to retrieve the room information.', 'tool_calls': [{{'tool': 'booking_agent', 'argument': ['fetch room data relating to room 1]}}], 'return_to_user': False}}
 
+                - once the called agents have presented with their responses, return the summary using the "summary_of_agents_response". 
 
                 """
     return prompt
 
 def get_chat_completion(llm_client, state, model, response_model, system_prompt):
-    print(state)
     response = llm_client.chat.completions.create(
                model=model,
                messages=[{"role": "system", "content": system_prompt}] + state["messages"] + [{"role": "assistant", "content": f"""Agent outputs — 

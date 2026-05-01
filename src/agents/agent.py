@@ -3,44 +3,17 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from .agent_config import get_chat_completion, get_chat_completion_system_prompt
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents
-from langgraph.graph import StateGraph, START, END
 from typing import Annotated
 from .state import orchestrator_output, graph_state
+from .graph import setup_graph
 
 class agentic_workflow:
-
     def __init__(self, llm_client, kb_agent, bk_agent):
         self.kb_agent = kb_agent
         self.bk_agent = bk_agent
         self.llm_client = llm_client
         self.available_tools = [self.knowledge_base_agent, self.booking_agent]
-        self.graph = StateGraph(graph_state)
-        self.graph.add_node("orchestrator", self.orchestrator)
-        self.graph.add_node("knowledge_base_agent", self.knowledge_base_agent)
-        self.graph.add_node("booking_agent", self.booking_agent)
-        self.graph.add_edge(START, "orchestrator")
-        self.graph.add_conditional_edges("orchestrator", self.tool_call_node,
-                                         {
-                                            "end": END,
-                                            "knowledge_base_agent": "knowledge_base_agent",
-                                            "booking_agent": "booking_agent",
-                                            "orchestrator": "orchestrator"
-                                         })
-        self.graph.add_conditional_edges("knowledge_base_agent", self.tool_call_node,
-                                         {
-                                            "end": END,
-                                            "knowledge_base_agent": "knowledge_base_agent",
-                                            "booking_agent": "booking_agent",
-                                            "orchestrator": "orchestrator"
-                                         })
-        self.graph.add_conditional_edges("booking_agent", self.tool_call_node,
-                                         {
-                                            "end": END,
-                                            "knowledge_base_agent": "knowledge_base_agent",
-                                            "booking_agent": "booking_agent",
-                                            "orchestrator": "orchestrator"
-                                         })
-        self.compiled_graph = self.graph.compile()
+        self.compiled_graph = setup_graph(self.orchestrator, self.knowledge_base_agent, self.booking_agent, self.tool_call_node)
         return
     
     def get_graph(self):
@@ -53,17 +26,16 @@ class agentic_workflow:
         json_response = response.model_dump()
         if json_response["return_to_user"] == True:
             state["return_to_user_decision"] = True
-        # getting llm reasoning from response and pushing it to messages state
         state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
         _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
         #storing tool calls 
         print(json_response)
-        state["tool_calls"] = response.model_dump()["tool_calls"]
-        state["return_to_user_decision"] = response.model_dump()["return_to_user"]
+        state["tool_calls"] = json_response["tool_calls"]
+        state["return_to_user_decision"] =json_response["return_to_user"]
+        state["response_to_user"] = json_response["summary_of_agents_response"] 
         return state
 
     def tool_call_node(self, state: graph_state):
-        print(state)
         if state["return_to_user_decision"] == True:
             return "end"
         if len(state["tool_calls"]) != 0:
@@ -72,10 +44,7 @@ class agentic_workflow:
                 return "knowledge_base_agent"
             if toolcall["tool"] == "booking_agent":
                 return "booking_agent"
-        return "end"
-# return the knowledge base agent, its node run, then back to toolnode, then booking_agent runs, then back to tool node, on each agent node, pop the tool call/remove it from the list, if empty return to user
-        #state["tool_calls"].clear()
-    # the issue: this is a conditional node, so inside of it, updating the state does not work, as far as i understood
+        return "orchestrator"
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
         query =""
