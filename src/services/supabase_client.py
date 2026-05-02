@@ -1,4 +1,6 @@
 import os
+from langchain_core.tools import ToolException
+from langchain.tools import tool
 from supabase import create_client, Client
 from dotenv import load_dotenv
 load_dotenv()
@@ -8,14 +10,18 @@ supabase_apikey = os.environ.get("SUPABASE_KEY")
 
 supabase: Client = create_client(supabase_url, supabase_apikey)
 
-
+@tool
 def fetch_room_data():
     """Fetch room data to check if which rooms are available"""
-    response = (supabase.table("rooms")
-    .select("*")
-    .execute())
-    return response
+    try:
+        response = (supabase.table("rooms")
+        .select("*")
+        .execute())
+        return response
+    except Exception as e:
+        raise ToolException(f"Error in tool execution: {e}")
 
+@tool
 def update_room_data(Json_object):
     """Update room data in the database.
 
@@ -27,14 +33,18 @@ def update_room_data(Json_object):
         - end_time (time): reservation end time
         - reservation_date (date): date of the reservation
     """
-    response = (supabase.table('rooms')
-                .upsert(Json_object)
-                .execute())
-    return
+    try:
+        response = (supabase.table('rooms')
+                    .upsert(Json_object)
+                    .execute())
+        return response
+    except Exception as e:
+        raise ToolException(f"Error in tool execution: {e}")
 
 def delete_room_data():
     return
 
+@tool
 def insert_room_data():
     """Insert a room into the database.
         use this only when you are required to create a new room, it will create a room with NULL values in the database
@@ -42,11 +52,14 @@ def insert_room_data():
         next call update_room_data tool to update NULL values with real values
         
     """
-    response = (supabase.table("rooms")
-        .insert({
-            "occupied_status": False,
-        })
-        .execute())
-    return response
+    try:
+        response = (supabase.table("rooms")
+            .insert({
+                "occupied_status": False,
+            })
+            .execute())
+        return response
+    except Exception as e:
+        raise ToolException(f"Error in tool execution: {e}")
 
-
+#can add langsmith tool server

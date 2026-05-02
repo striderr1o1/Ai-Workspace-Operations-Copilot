@@ -39,3 +39,5 @@ class Retrieval:
             return results
         except Exception:
             raise RetrievalError('retrieval.py: Error in getting retrieval results')
+
+

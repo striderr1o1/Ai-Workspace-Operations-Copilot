@@ -25,3 +25,5 @@ async def query_agent(request: str):
     return result
 
 # left knowledge_base_agent for the while, need to complete supabase crud, then add it to tools, then build its agent or the kb agent
+
+# need to add the MCP server also for finance agent
