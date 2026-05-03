@@ -3,7 +3,6 @@ from .retrieval import Retrieval
 from langchain.tools import tool
 from langchain_core.tools import ToolException
 
-@tool
 def ingest_documents(documents_list):
     """Ingestion documents in this function as a list when 
     you get a list of documents to ingest"""
