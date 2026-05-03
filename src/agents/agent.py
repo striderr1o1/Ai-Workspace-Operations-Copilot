@@ -29,7 +29,6 @@ class agentic_workflow:
         state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
         _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
         #storing tool calls 
-        print(json_response)
         state["tool_calls"] = json_response["tool_calls"]
         state["return_to_user_decision"] =json_response["return_to_user"]
         state["response_to_user"] = json_response["summary_of_agents_response"] 

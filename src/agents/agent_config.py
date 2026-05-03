@@ -1,6 +1,6 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
-from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents
+from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
 from services.supabase_client import fetch_room_data, insert_room_data, update_room_data
 from openai import OpenAI
 import os
@@ -28,7 +28,7 @@ llm = ChatGroq(
 def get_kb_agent():
     agent = create_agent(
             model=llm,
-            tools = [retrieve_documents],
+            tools = [get_all_namespaces, retrieve_documents],
             )
     return agent
 

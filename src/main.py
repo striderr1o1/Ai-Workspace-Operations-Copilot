@@ -33,13 +33,13 @@ async def query_agent(request: str):
 # need to add the MCP server also for finance agent
 
 @app.post("/ingestion")
-async def ingest_pdf(file: UploadFile):
+async def ingest_pdf(file: UploadFile, namespace_name: str):
     tmp_dir = tempfile.mkdtemp() #creating temp dir
     try:
         tmp_path = os.path.join(tmp_dir, file.filename) #creating file path
         with open(tmp_path, "wb") as f: # writing to that file
             shutil.copyfileobj(file.file, f)
-        response = ingest_documents([tmp_path])
+        response = ingest_documents([tmp_path], namespace_name)
         return response
     finally:
         # removes temp dir

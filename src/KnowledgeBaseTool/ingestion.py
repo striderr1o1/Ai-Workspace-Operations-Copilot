@@ -18,7 +18,7 @@ class Ingestion:
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
         self._create_index()
 
-    def ingest_document(self, filepath):
+    def ingest_document(self, filepath, namespace):
          #main function
         self.filepath = filepath
         doc = self._load_document()
@@ -26,7 +26,7 @@ class Ingestion:
         str_chunks, metadatas = self._convert_doc_chunks_to_str(chunks)
         embeddings_list = self._create_embeddings_from_chunks(str_chunks)
         vectors_list = self._preparing_ingestions(embeddings_list, str_chunks, metadatas)
-        self._store_in_vectordb(vectors_list)
+        self._store_in_vectordb(vectors_list, namespace)
         return 
 
     def _load_document(self): #load the document
@@ -109,13 +109,13 @@ class Ingestion:
             raise IngestionError(f'Error in ingestion.py _preparing_ingestions()')
 
         
-    def _store_in_vectordb(self, vectors_list): #upsert in pinecone vector store
+    def _store_in_vectordb(self, vectors_list, namespace_name): #upsert in pinecone vector store
         try:
             batch_size = 100
             index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
             for i in range(0, len(vectors_list), batch_size):
                 index.upsert(
-                    namespace = "test-resume",
+                    namespace = namespace_name,
                     vectors = vectors_list[i: i+batch_size]
                 )
     

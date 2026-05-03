@@ -13,9 +13,9 @@ class Retrieval:
         )
         return
 
-    def retrieve(self, query):
+    def retrieve(self, query, namespace):
         embeddings = self._create_embeddings(query)
-        results = self._get_results(embeddings)
+        results = self._get_results(embeddings, namespace)
         return results
     
     def _create_embeddings(self, query):
@@ -24,12 +24,12 @@ class Retrieval:
             return embeddings
         except Exception:
             raise RetrievalError('retrieval.py: error in creating retrieval embeddings')
-    def _get_results(self, embeddings):
+    def _get_results(self, embeddings, namespace):
         try:
             index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
        
             results = index.query(
-                namespace='test-resume',
+                namespace=namespace,
                 vector=embeddings, 
                 top_k=5,
                 include_metadata=True,
