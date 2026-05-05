@@ -7,7 +7,6 @@ import tempfile
 import os
 import shutil
 app = FastAPI()
-
 client = get_subagents_client()
 kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()

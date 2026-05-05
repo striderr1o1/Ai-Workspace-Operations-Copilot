@@ -12,7 +12,7 @@ class graph_state(TypedDict):
 
 class orchestrator_output(BaseModel):
     reasoning: str
-    tool_calls: list #for agent calls
+    tool_calls: list 
     return_to_user: bool
     summary_of_agents_response: str
     

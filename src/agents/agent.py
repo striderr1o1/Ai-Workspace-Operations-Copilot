@@ -27,7 +27,6 @@ class agentic_workflow:
             state["return_to_user_decision"] = True
         state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
         _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
-        #storing tool calls 
         state["tool_calls"] = json_response["tool_calls"]
         state["return_to_user_decision"] =json_response["return_to_user"]
         state["response_to_user"] = json_response["summary_of_agents_response"] 
@@ -65,4 +64,3 @@ class agentic_workflow:
         state["booking_agent_output"] = response["messages"][-1].content
         return state
 
-    #need to check how to end the workflow add tool_call_node

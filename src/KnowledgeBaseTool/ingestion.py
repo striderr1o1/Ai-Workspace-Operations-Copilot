@@ -122,4 +122,3 @@ class Ingestion:
             return
         except Exception:
             raise IngestionError('Ingestion.py -> Error in storing in vector store, _store_in_vectordb()')
-# need to add error handling
