@@ -17,7 +17,6 @@ class Retrieval:
         embeddings = self._create_embeddings(query)
         results = self._get_results(embeddings, namespace)
         return results
-    
     def _create_embeddings(self, query):
         try:
             embeddings = self.embedding.embed_query(query) 
