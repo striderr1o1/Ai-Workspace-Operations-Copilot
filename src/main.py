@@ -1,4 +1,6 @@
+from collections.abc import AsyncIterable
 from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import StreamingResponse
 from agents.agent import agentic_workflow
 from agents.agent_config import get_kb_agent, get_booking_agent, get_subagents_client
 from KnowledgeBaseTool.kb_tools import ingest_documents
@@ -20,7 +22,6 @@ async def query_agent(request: str):
         "tool_calls": [],
         "knowledge_base_agent_output": "",
         "booking_agent_output": "",
-        "finance_agent_output": "",
         "return_to_user_decision": False,
     })
     print('\n\n')
@@ -44,4 +45,6 @@ async def ingest_pdf(file: UploadFile, namespace_name: str):
         # removes temp dir
         shutil.rmtree(tmp_dir)
 
-
+@app.post("/query-agent", response_class=StreamingResponse)
+async def stream_response(query: str):
+    return 
