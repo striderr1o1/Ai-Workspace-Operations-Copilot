@@ -33,6 +33,7 @@ class agentic_workflow:
         return state
 
     def tool_call_node(self, state: graph_state):
+        print(state["tool_calls"])
         if state["return_to_user_decision"] == True:
             return "end"
         if len(state["tool_calls"]) != 0:
@@ -56,10 +57,12 @@ class agentic_workflow:
 
     def booking_agent(self, state: graph_state)-> graph_state:
         query =""
-        toolcall = state["tool_calls"][0]
-        if toolcall["tool"] == "booking_agent":
-            query = toolcall["argument"][0]
-            state["tool_calls"].remove(toolcall) 
+        if len(state["tool_calls"]) != 0:
+            toolcall = state["tool_calls"][0]
+            print(toolcall)
+            if toolcall["tool"] == "booking_agent":
+                query = toolcall["argument"][0]
+                state["tool_calls"].remove(toolcall) 
         response = self.bk_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         state["booking_agent_output"] = response["messages"][-1].content
         return state

@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterable
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from agents.agent import agentic_workflow
 from agents.agent_config import get_kb_agent, get_booking_agent, get_subagents_client
 from KnowledgeBaseTool.kb_tools import ingest_documents
@@ -9,6 +10,14 @@ import tempfile
 import os
 import shutil
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 client = get_subagents_client()
 kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()
@@ -17,6 +26,7 @@ graph = agent.get_graph()
 
 @app.post("/query")
 async def query_agent(request: str):
+    print(request)
     result = graph.invoke({
         "messages": [{"role": "user", "content": request}],
         "tool_calls": [],
