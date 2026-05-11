@@ -38,10 +38,6 @@ async def query_agent(request: str):
     print(result)
     return result
 
-# left knowledge_base_agent for the while, need to complete supabase crud, then add it to tools, then build its agent or the kb agent
-
-# need to add the MCP server also for finance agent
-
 @app.post("/ingestion")
 async def ingest_pdf(file: UploadFile, namespace_name: str):
     tmp_dir = tempfile.mkdtemp() #creating temp dir
@@ -55,6 +51,13 @@ async def ingest_pdf(file: UploadFile, namespace_name: str):
         # removes temp dir
         shutil.rmtree(tmp_dir)
 
-@app.post("/query-agent", response_class=StreamingResponse)
-async def stream_response(query: str):
-    return 
+# @app.post("/query-agent", response_class=StreamingResponse)
+# async def stream_response(query: str):
+#     result = graph.invoke({
+#         "messages": [{"role": "user", "content": query}],
+#         "tool_calls": [],
+#         "knowledge_base_agent_output": "",
+#         "booking_agent_output": "",
+#         "return_to_user_decision": False,
+#     })
+#     return 
