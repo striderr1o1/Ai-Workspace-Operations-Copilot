@@ -7,7 +7,7 @@ from typing import List
 import tempfile
 import os
 import shutil
-from dependencies import run_inference
+from dependencies import run_inference, run_inference_with_stream
 app = FastAPI()
 
 app.add_middleware(
@@ -36,7 +36,7 @@ async def ingest_pdf(file: UploadFile, namespace_name: str):
         # removes temp dir
         shutil.rmtree(tmp_dir)
 
-@app.post("/query-agent", response_class=StreamingResponse)
+@app.post("/query-agent")
 async def stream_response(query: str):
-    result = run_inference(request)
-    return 
+    #result = run_inference(request)
+    return StreamingResponse(run_inference_with_stream(query), media_type="text/event-stream")
