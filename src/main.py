@@ -2,13 +2,12 @@ from collections.abc import AsyncIterable
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from agents.agent import agentic_workflow
-from agents.agent_config import get_kb_agent, get_booking_agent, get_subagents_client
 from KnowledgeBaseTool.kb_tools import ingest_documents
 from typing import List
 import tempfile
 import os
 import shutil
+from dependencies import run_inference
 app = FastAPI()
 
 app.add_middleware(
@@ -18,24 +17,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-client = get_subagents_client()
-kb_agent = get_kb_agent()
-booking_agent = get_booking_agent()
-agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent)
-graph = agent.get_graph()
 
 @app.post("/query")
 async def query_agent(request: str):
-    print(request)
-    result = graph.invoke({
-        "messages": [{"role": "user", "content": request}],
-        "tool_calls": [],
-        "knowledge_base_agent_output": "",
-        "booking_agent_output": "",
-        "return_to_user_decision": False,
-    })
-    print('\n\n')
-    print(result)
+    result = run_inference(request)
     return result
 
 @app.post("/ingestion")
@@ -51,13 +36,7 @@ async def ingest_pdf(file: UploadFile, namespace_name: str):
         # removes temp dir
         shutil.rmtree(tmp_dir)
 
-# @app.post("/query-agent", response_class=StreamingResponse)
-# async def stream_response(query: str):
-#     result = graph.invoke({
-#         "messages": [{"role": "user", "content": query}],
-#         "tool_calls": [],
-#         "knowledge_base_agent_output": "",
-#         "booking_agent_output": "",
-#         "return_to_user_decision": False,
-#     })
-#     return 
+@app.post("/query-agent", response_class=StreamingResponse)
+async def stream_response(query: str):
+    result = run_inference(request)
+    return 
