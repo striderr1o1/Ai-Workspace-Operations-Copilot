@@ -1,5 +1,4 @@
-from collections.abc import AsyncIterable
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from KnowledgeBaseTool.kb_tools import ingest_documents
@@ -20,8 +19,11 @@ app.add_middleware(
 
 @app.post("/query")
 async def query_agent(request: str):
-    result = run_inference(request)
-    return result
+    try:
+        result = run_inference(request)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}");
 
 @app.post("/ingestion")
 async def ingest_pdf(file: UploadFile, namespace_name: str):
@@ -32,11 +34,15 @@ async def ingest_pdf(file: UploadFile, namespace_name: str):
             shutil.copyfileobj(file.file, f)
         response = ingest_documents([tmp_path], namespace_name)
         return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}");
     finally:
         # removes temp dir
         shutil.rmtree(tmp_dir)
 
 @app.post("/query-agent")
 async def stream_response(query: str):
-    #result = run_inference(request)
-    return StreamingResponse(run_inference_with_stream(query), media_type="text/event-stream")
+    try: 
+        return StreamingResponse(run_inference_with_stream(query), media_type="text/event-stream")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}");

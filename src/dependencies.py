@@ -36,11 +36,12 @@ async def run_inference_with_stream(query: str):
         stream_mode="updates"
     ):
         for node_name, update in chunk.items():
-            if update.get("tool_calls"):
-                yield f"data: {json.dumps({'event': 'tool_calls', 'node': node_name, 'data': update['tool_calls']})}\n\n"
-            if update.get("knowledge_base_agent_output"):
-                yield f"data: {json.dumps({'event': 'kb_result', 'data': update['knowledge_base_agent_output']})}\n\n"
-            if update.get("booking_agent_output"):
-                yield f"data: {json.dumps({'event': 'booking_result', 'data': update['booking_agent_output']})}\n\n"
-            if update.get("return_to_user_decision") and update.get("response_to_user"):
-                yield f"data: {json.dumps({'event': 'final', 'data': update['response_to_user']})}\n\n"
+            print(node_name)
+            if node_name=="orchestrator":
+                yield f"data: {json.dumps({'event': 'agent calls', 'node': node_name, 'data': update['tool_calls']})}\n\n"
+            if node_name=="knowledge_base_agent":
+                yield f"data: {json.dumps({'event': 'knowledge base agent', 'data': update['knowledge_base_agent_output']})}\n\n"
+            if node_name=="booking_agent":
+                yield f"data: {json.dumps({'event': 'booking agent', 'data': update['booking_agent_output']})}\n\n"
+            if update["return_to_user_decision"] == True and update.get("response_to_user"):
+                yield f"data: {json.dumps({'event': 'final response', 'data': update['response_to_user']})}\n\n"

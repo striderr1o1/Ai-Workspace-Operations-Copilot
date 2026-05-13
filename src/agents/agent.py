@@ -19,30 +19,38 @@ class agentic_workflow:
         return self.compiled_graph
 
     def orchestrator(self, state: graph_state) -> graph_state:
-        state["tool_calls"].clear()
-        system_promptt = get_chat_completion_system_prompt(self.available_tools)
-        response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b:free", response_model=orchestrator_output, system_prompt = system_promptt)
-        json_response = response.model_dump()
-        if json_response["return_to_user"] == True:
+        try:
+            state["tool_calls"].clear()
+            system_promptt = get_chat_completion_system_prompt(self.available_tools)
+            response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b:free", response_model=orchestrator_output, system_prompt = system_promptt)
+            json_response = response.model_dump()
+            if json_response["return_to_user"] == True:
+                state["return_to_user_decision"] = True
+            state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
+            _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
+            state["tool_calls"] = json_response["tool_calls"]
+            state["return_to_user_decision"] =json_response["return_to_user"]
+            state["response_to_user"] = json_response["summary_of_agents_response"] 
+            return state
+        except Exception as e:
             state["return_to_user_decision"] = True
-        state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
-        _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
-        state["tool_calls"] = json_response["tool_calls"]
-        state["return_to_user_decision"] =json_response["return_to_user"]
-        state["response_to_user"] = json_response["summary_of_agents_response"] 
-        return state
+            state["response_to_user"] = f"An Unexpected Error Occured: {e}"
 
     def tool_call_node(self, state: graph_state):
-        print(state["tool_calls"])
-        if state["return_to_user_decision"] == True:
+        try:
+            if state["return_to_user_decision"] == True:
+                return "end"
+            if len(state["tool_calls"]) != 0:
+                toolcall = state["tool_calls"][0]
+                if toolcall["tool"] == "knowledge_base_agent":
+                    return "knowledge_base_agent"
+                if toolcall["tool"] == "booking_agent":
+                    return "booking_agent"
+            return "orchestrator"
+        except Exception as e:
+            state["return_to_user_decision"] = True
+            state["response_to_user"] = f"An Unexpected Error Occured: {e}"
             return "end"
-        if len(state["tool_calls"]) != 0:
-            toolcall = state["tool_calls"][0]
-            if toolcall["tool"] == "knowledge_base_agent":
-                return "knowledge_base_agent"
-            if toolcall["tool"] == "booking_agent":
-                return "booking_agent"
-        return "orchestrator"
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
         query =""
@@ -59,7 +67,6 @@ class agentic_workflow:
         query =""
         if len(state["tool_calls"]) != 0:
             toolcall = state["tool_calls"][0]
-            print(toolcall)
             if toolcall["tool"] == "booking_agent":
                 query = toolcall["argument"][0]
                 state["tool_calls"].remove(toolcall) 
