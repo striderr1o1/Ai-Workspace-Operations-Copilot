@@ -1,23 +1,28 @@
-from supabase_client import get_supabase_client
-from argon2 import PasswordHasher
+from .supabase_client import get_supabase_client
+#from argon2 import PasswordHasher
 supabase = get_supabase_client()
-ph = PasswordHasher(
-        hash_len=8
-        )
+#ph = PasswordHasher(
+#        hash_len=8
+#        )
 # need to implement authentication using supabase
-def hash_password(password: str):
-    hashed_pw = ph.hash(password)
-    return hashed_pw
+#def hash_password(password: str):
+#    hashed_pw = ph.hash(password)
+#    return hashed_pw
 
 def signup(email: str, password: str):
-    hashed_pw = hash_password(password)
-    print(hashed_pw)
     response = supabase.auth.sign_up(
     {
         "email": email,
-        "password": hashed_pw,
+        "password": password,
     }
     )
     return response
 
+def signin():
+    response = supabase.auth.sign_in_with_oauth(
+    {"provider": "google"}
+    )
+    return response
 
+def signout():
+    return

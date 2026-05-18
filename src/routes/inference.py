@@ -1,20 +1,25 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from dependencies import run_inference, run_inference_with_stream
+from pydantic import BaseModel
+
 
 router = APIRouter()
 
+class inference(BaseModel):
+    query: str
+
 @router.post("/query")
-async def query_agent(request: str):
+async def query_agent(inf: inference):
     try:
-        result = run_inference(request)
+        result = run_inference(inf.query)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
 @router.post("/query-agent")
-async def stream_response(query: str):
+async def stream_response(inf: inference):
     try:
-        return StreamingResponse(run_inference_with_stream(query), media_type="text/event-stream")
+        return StreamingResponse(run_inference_with_stream(inf.query), media_type="text/event-stream")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
