@@ -10,10 +10,10 @@ class credentials(BaseModel):
 class token(BaseModel):
     access_token: str
 
-@router.post('/signup')
-async def signup_endpoint(cred: credentials):
-    response = signup(cred.email, cred.password)
-    return response
+# @router.post('/signup')
+# async def signup_endpoint(cred: credentials):
+#     response = signup(cred.email, cred.password)
+#     return response
 
 @router.post('/signin')
 async def signin_endpoint():
