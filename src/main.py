@@ -16,5 +16,4 @@ app.add_middleware(
 
 app.include_router(inference_router)
 app.include_router(ingestion_router)
-app.include_router(auth_router)
 
