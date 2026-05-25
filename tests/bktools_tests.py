@@ -14,4 +14,3 @@ def test_retrieval(query, namespace):
 
 # print(test_retrieval("Workspace policies", "office_doc"))
 
-
