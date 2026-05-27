@@ -17,3 +17,5 @@ supabase
 python-multipart
 pytest
 pytest-asyncio
+streamlit
+requests
