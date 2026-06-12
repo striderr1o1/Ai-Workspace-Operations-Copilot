@@ -17,3 +17,4 @@ def get_google_embeddings(chunks):
 
 
 # bottle neck: according to claude, if chunks are greater than 100 than google embedding model will reject it so go with batch size
+# also need to look up normalization
