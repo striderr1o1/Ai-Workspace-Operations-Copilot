@@ -1,11 +1,11 @@
 FROM python:3.11-slim
 
-WORKDIR /app 
+WORKDIR /app
 
 COPY ./ ./
 
 RUN pip install -r requirements.txt
 
-RUN cd src/
+WORKDIR /app/src
 
-CMD ["uvicorn", "main:app", "--reload", "--port", "3000"]
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-3000}
