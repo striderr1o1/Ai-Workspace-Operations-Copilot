@@ -1,13 +1,14 @@
-from fastapi import APIRouter, UploadFile, HTTPException
+from fastapi import APIRouter, UploadFile, HTTPException, Form, File
 from KnowledgeBaseTool.kb_tools import ingest_documents
 import tempfile
 import os
 import shutil
-
+from pydantic import BaseModel
 router = APIRouter()
 
+
 @router.post("/ingestion")
-async def ingest_pdf(file: UploadFile, namespace_name: str):
+async def ingest_pdf(file: UploadFile = File(...), namespace_name: str = Form(...)):
     tmp_dir = tempfile.mkdtemp()
     try:
         tmp_path = os.path.join(tmp_dir, file.filename)
