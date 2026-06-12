@@ -5,15 +5,16 @@ import os
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 from utils.exceptions import IngestionError
+from .embedding_config import get_google_embeddings
 load_dotenv()
 
 class Ingestion:
     def __init__(self): #configuration
         self.filepath = None
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap = 200)
-        self.embedding = OllamaEmbeddings(
-            model=os.environ.get("EMBEDDING_MODEL")
-        )
+        ##self.embedding = OllamaEmbeddings(
+        ##    model=os.environ.get("EMBEDDING_MODEL")
+        ##)
         self.pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
         self._create_index()
@@ -64,7 +65,9 @@ class Ingestion:
 
     def _create_embeddings_from_chunks(self, text_chunks): # create embeddings out of string chunks
         try:
-            embeddings = self.embedding.embed_documents(text_chunks) 
+            # Previous Ollama embeddings (uncomment self.embedding in __init__ to switch back):
+            # embeddings = self.embedding.embed_documents(text_chunks)
+            embeddings = get_google_embeddings(text_chunks)
             print("Embedding")
             return embeddings
         except Exception:
