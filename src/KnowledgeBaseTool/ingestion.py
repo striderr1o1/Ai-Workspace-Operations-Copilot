@@ -1,3 +1,5 @@
+from cgitb import text
+import time
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
@@ -5,7 +7,7 @@ import os
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 from utils.exceptions import IngestionError
-from .embedding_config import get_google_embeddings
+from .embedding_config import get_google_embeddings, get_openrouter_embeddings
 load_dotenv()
 
 class Ingestion:
@@ -64,14 +66,22 @@ class Ingestion:
 
 
     def _create_embeddings_from_chunks(self, text_chunks): # create embeddings out of string chunks
-        try:
             # Previous Ollama embeddings (uncomment self.embedding in __init__ to switch back):
             # embeddings = self.embedding.embed_documents(text_chunks)
-            embeddings = get_google_embeddings(text_chunks)
-            print("Embedding")
+            
+        try:
+            BATCH_SIZE = 99
+            embeddings = []
+            for i in range(0, len(text_chunks), BATCH_SIZE):
+                chunks = text_chunks[i:i+BATCH_SIZE]
+                # embeddings_from_chunk = get_google_embeddings(chunks)
+                embeddings_from_chunk = get_openrouter_embeddings(chunks)
+                print("Embedding chunks: ", len(chunks))
+                embeddings = embeddings + embeddings_from_chunk
+                #time.sleep(70)
             return embeddings
-        except Exception:
-            raise IngestionError('Error in creating embeddings, ingestion.py,_create_embeddings_from_chunks()')
+        except Exception as e:
+            raise IngestionError(f'Error in creating embeddings, ingestion.py,_create_embeddings_from_chunks(). Details: {e}')
 
     def _create_index(self): #initialize index if not already
         try:
@@ -123,5 +133,5 @@ class Ingestion:
                 )
     
             return
-        except Exception:
-            raise IngestionError('Ingestion.py -> Error in storing in vector store, _store_in_vectordb()')
+        except Exception as e:
+            raise IngestionError(f'Ingestion.py -> Error in storing in vector store, _store_in_vectordb(). Details: {e}')
