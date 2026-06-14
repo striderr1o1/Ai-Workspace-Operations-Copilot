@@ -31,10 +31,14 @@ class agentic_workflow:
             state["tool_calls"] = json_response["tool_calls"]
             state["return_to_user_decision"] =json_response["return_to_user"]
             state["response_to_user"] = json_response["summary_of_agents_response"] 
+            state["count"]+=1
+            if state["count"] > 3:
+                state["return_to_user_decision"] = True
             return state
         except Exception as e:
             state["return_to_user_decision"] = True
             state["response_to_user"] = f"An Unexpected Error Occured: {e}"
+            return state
 
     def tool_call_node(self, state: graph_state):
         try:

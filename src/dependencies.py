@@ -20,6 +20,8 @@ def run_inference(query: str):
        "knowledge_base_agent_output": "",
        "booking_agent_output": "",
        "return_to_user_decision": False,
+       "response_to_user": "",
+       "count": 0
     })
     
     return result
@@ -32,6 +34,8 @@ async def run_inference_with_stream(query: str):
             "knowledge_base_agent_output": "",
             "booking_agent_output": "",
             "return_to_user_decision": False,
+            "response_to_user": "",
+            "count": 0
         },
         stream_mode="updates"
     ):

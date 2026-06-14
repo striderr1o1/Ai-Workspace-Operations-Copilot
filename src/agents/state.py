@@ -8,6 +8,8 @@ class graph_state(TypedDict):
     booking_agent_output: str
     return_to_user_decision: bool
     response_to_user: str
+    count: int
+
 #    finance_agent_output: str
 
 class orchestrator_output(BaseModel):
