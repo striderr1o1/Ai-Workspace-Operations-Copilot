@@ -214,11 +214,3 @@ docker run -p 8000:3000 --env-file .env ops-copilot
 ```
 
 The container runs uvicorn from `src/` and binds to `$PORT` (defaults to `3000`), making it deployable to Railway and similar platforms.
-
-## Testing
-
-The `tests/` directory contains a pytest suite covering exceptions, state, ingestion, retrieval, the agent graph, and the API. See `tests/TESTING_GUIDE.md` for details.
-
-```bash
-pytest
-```
