@@ -20,3 +20,4 @@ pytest-asyncio
 streamlit
 requests
 google-genai
+fastmcp

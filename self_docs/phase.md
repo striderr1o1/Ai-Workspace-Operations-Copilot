@@ -15,6 +15,12 @@ Orchestrator -> Campaign Designer (RAG over brand guidelines, past campaign perf
 
 ## Phase 1:
 - create the mcp server with tools and check what is being input and output, how it works, and check what data needs to be stored
+- integrate postgresql, design schema
+- unit testing
+
+## Phase 2:
+- connect the agentic workflow
+- parallel execution of agents (asyncio)
 
 
 
