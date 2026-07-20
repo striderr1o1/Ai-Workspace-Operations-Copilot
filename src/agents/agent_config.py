@@ -1,7 +1,6 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
-from services.supabase_client import fetch_room_data, insert_room_data, update_room_data
 from openai import OpenAI
 import os
 import instructor
@@ -10,7 +9,7 @@ load_dotenv()
 
 
 
-def get_subagents_client():
+def get_orchestrator_client():
     client = instructor.from_openai(
          OpenAI(
          base_url="https://openrouter.ai/api/v1",
@@ -35,7 +34,7 @@ def get_kb_agent():
 def get_booking_agent():
     agent = create_agent(
             model = llm,
-            tools = [fetch_room_data, insert_room_data, update_room_data]
+            tools = []
             )
     return agent
 
