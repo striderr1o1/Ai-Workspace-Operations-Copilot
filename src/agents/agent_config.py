@@ -21,7 +21,7 @@ def get_subagents_client():
     return client
 
 llm = ChatGroq(
-        model = "qwen/qwen3-32b",
+        model = "openai/gpt-oss-20b",
         temperature=0,
         )
 

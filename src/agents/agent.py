@@ -2,10 +2,9 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..")) 
 from .agent_config import get_chat_completion, get_chat_completion_system_prompt 
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents 
-from typing import Annotated
+from typing import Annotated 
 from .state import orchestrator_output, graph_state
 from .graph import setup_graph
-
 class agentic_workflow:
     def __init__(self, llm_client, kb_agent, bk_agent):
         self.kb_agent = kb_agent
@@ -22,7 +21,7 @@ class agentic_workflow:
         try:
             state["tool_calls"].clear()
             system_promptt = get_chat_completion_system_prompt(self.available_tools)
-            response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b:free", response_model=orchestrator_output, system_prompt = system_promptt)
+            response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b", response_model=orchestrator_output, system_prompt = system_promptt)
             json_response = response.model_dump()
             if json_response["return_to_user"] == True:
                 state["return_to_user_decision"] = True

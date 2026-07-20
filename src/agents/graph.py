@@ -2,7 +2,6 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import RetryPolicy
 from .state import graph_state
 
-
 def setup_graph(orchestrator, knowledge_base_agent, booking_agent, tool_call_node):
     graph = StateGraph(graph_state)
     graph.add_node("orchestrator", orchestrator, retry_policy = RetryPolicy(max_attempts=3, initial_interval=5.0, backoff_factor=2.0))
