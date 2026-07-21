@@ -1,11 +1,13 @@
 # from groq import Groq
-from agents.agent_config import get_kb_agent, get_booking_agent, get_orchestrator_client
+from agents.agent_config import get_kb_agent, get_booking_agent, get_orchestrator_client, get_mcp_tools
 import json
 from agents.agent import agentic_workflow
+import asyncio
 # 
 # def initialize_llm():
 #     client = Groq()
 #     return client
+tools = asyncio.run(get_mcp_tools())
 client = get_orchestrator_client()
 kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()

@@ -1,5 +1,6 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
+from langchain_mcp_adapters.client import MultiServerMCPClient
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
 from openai import OpenAI
 import os
@@ -24,17 +25,38 @@ llm = ChatGroq(
         temperature=0,
         )
 
-def get_kb_agent():
+
+def get_mcp_client():
+    """Build the MCP client used to reach the tool servers (e.g. Hubspot MCP)."""
+    client = MultiServerMCPClient(
+        {
+            "hubspot": {
+                "url": os.environ.get("MCP_SERVER_URL", "http://localhost:8000/mcp"),
+                "transport": "stdio",
+            }
+        }
+    )
+    return client
+
+
+async def get_mcp_tools():
+    """Fetch the tools exposed by the MCP server(s) as LangChain tools."""
+    client = get_mcp_client()
+    tools = await client.get_tools()
+    return tools
+
+
+def get_kb_agent(tools=None):
     agent = create_agent(
             model=llm,
-            tools = [get_all_namespaces, retrieve_documents],
+            tools = [get_all_namespaces, retrieve_documents] + list(tools or []),
             )
     return agent
 
-def get_booking_agent():
+def get_booking_agent(tools=None):
     agent = create_agent(
             model = llm,
-            tools = []
+            tools = list(tools or []),
             )
     return agent
 
