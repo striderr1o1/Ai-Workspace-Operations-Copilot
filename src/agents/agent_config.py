@@ -1,13 +1,14 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
+#from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
 from openai import OpenAI
 import os
 import instructor
 from dotenv import load_dotenv
 load_dotenv()
 
+MCP_SERVER_PATH = os.path.join(os.path.dirname(__file__), "..", "mcp_servers", "server.py")
 
 
 def get_orchestrator_client():
@@ -26,12 +27,14 @@ llm = ChatGroq(
         )
 
 
+
 def get_mcp_client():
     """Build the MCP client used to reach the tool servers (e.g. Hubspot MCP)."""
     client = MultiServerMCPClient(
         {
             "hubspot": {
-                "url": os.environ.get("MCP_SERVER_URL", "http://localhost:8000/mcp"),
+                "command": "python",
+                "args": [MCP_SERVER_PATH],
                 "transport": "stdio",
             }
         }
@@ -49,7 +52,7 @@ async def get_mcp_tools():
 def get_kb_agent(tools=None):
     agent = create_agent(
             model=llm,
-            tools = [get_all_namespaces, retrieve_documents] + list(tools or []),
+            tools = list(tools or []),
             )
     return agent
 
