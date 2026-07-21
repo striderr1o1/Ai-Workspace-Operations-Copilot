@@ -22,5 +22,8 @@ Orchestrator -> Campaign Designer (RAG over brand guidelines, past campaign perf
 - connect the agentic workflow
 - parallel execution of agents (asyncio)
 
+## Phase 3:
+- evaluations/observability/production
+
 
 
