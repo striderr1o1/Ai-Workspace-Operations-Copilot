@@ -4,12 +4,13 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 #from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
 from openai import OpenAI
 import os
+import sys
 import instructor
 from dotenv import load_dotenv
 load_dotenv()
 
 _MCP_DIR = os.path.join(os.path.dirname(__file__), "..", "mcp_servers")
-BRAND_SERVER_PATH = os.path.join(_MCP_DIR, "brand_server.py")
+KNOWLEDGE_SERVER_PATH = os.path.join(_MCP_DIR, "knowledge_server.py")
 EXECUTION_SERVER_PATH = os.path.join(_MCP_DIR, "execution_server.py")
 
 
@@ -34,13 +35,13 @@ def get_mcp_client():
     """Build the MCP client that reaches both tool servers over stdio."""
     client = MultiServerMCPClient(
         {
-            "brand": {
-                "command": "python",
-                "args": [BRAND_SERVER_PATH],
+            "knowledge": {
+                "command": sys.executable,
+                "args": [KNOWLEDGE_SERVER_PATH],
                 "transport": "stdio",
             },
             "execution": {
-                "command": "python",
+                "command": sys.executable,
                 "args": [EXECUTION_SERVER_PATH],
                 "transport": "stdio",
             },
@@ -53,11 +54,11 @@ async def get_mcp_tools():
     """Fetch tools per server as LangChain tools.
 
     Returns a dict keyed by server name so each sub-agent gets only its own
-    tools (brand -> Brand agent, execution -> Execution agent).
+    tools (knowledge -> KB agent, execution -> Execution agent).
     """
     client = get_mcp_client()
     return {
-        "brand": await client.get_tools(server_name="brand"),
+        "knowledge": await client.get_tools(server_name="knowledge"),
         "execution": await client.get_tools(server_name="execution"),
     }
 

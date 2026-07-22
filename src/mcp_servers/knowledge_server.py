@@ -1,7 +1,6 @@
 from fastmcp import FastMCP
 
-mcp = FastMCP("Execution")
-
+mcp = FastMCP("Knowledge")
 
 
 if __name__ == "__main__":

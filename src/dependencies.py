@@ -9,7 +9,7 @@ import asyncio
 #     return client
 tools = asyncio.run(get_mcp_tools())
 client = get_orchestrator_client()
-kb_agent = get_kb_agent(tools=tools["brand"])
+kb_agent = get_kb_agent(tools=tools["knowledge"])
 booking_agent = get_booking_agent(tools=tools["execution"])
 agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent)
 graph = agent.get_graph()
