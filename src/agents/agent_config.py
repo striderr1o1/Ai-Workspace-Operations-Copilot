@@ -8,7 +8,9 @@ import instructor
 from dotenv import load_dotenv
 load_dotenv()
 
-MCP_SERVER_PATH = os.path.join(os.path.dirname(__file__), "..", "mcp_servers", "server.py")
+_MCP_DIR = os.path.join(os.path.dirname(__file__), "..", "mcp_servers")
+BRAND_SERVER_PATH = os.path.join(_MCP_DIR, "brand_server.py")
+EXECUTION_SERVER_PATH = os.path.join(_MCP_DIR, "execution_server.py")
 
 
 def get_orchestrator_client():
@@ -29,24 +31,35 @@ llm = ChatGroq(
 
 
 def get_mcp_client():
-    """Build the MCP client used to reach the tool servers (e.g. Hubspot MCP)."""
+    """Build the MCP client that reaches both tool servers over stdio."""
     client = MultiServerMCPClient(
         {
-            "hubspot": {
+            "brand": {
                 "command": "python",
-                "args": [MCP_SERVER_PATH],
+                "args": [BRAND_SERVER_PATH],
                 "transport": "stdio",
-            }
+            },
+            "execution": {
+                "command": "python",
+                "args": [EXECUTION_SERVER_PATH],
+                "transport": "stdio",
+            },
         }
     )
     return client
 
 
 async def get_mcp_tools():
-    """Fetch the tools exposed by the MCP server(s) as LangChain tools."""
+    """Fetch tools per server as LangChain tools.
+
+    Returns a dict keyed by server name so each sub-agent gets only its own
+    tools (brand -> Brand agent, execution -> Execution agent).
+    """
     client = get_mcp_client()
-    tools = await client.get_tools()
-    return tools
+    return {
+        "brand": await client.get_tools(server_name="brand"),
+        "execution": await client.get_tools(server_name="execution"),
+    }
 
 
 def get_kb_agent(tools=None):
