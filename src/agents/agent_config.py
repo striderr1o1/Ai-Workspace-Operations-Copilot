@@ -50,7 +50,7 @@ def get_chat_completion_system_prompt(available_tools):
                 You have access to the following agents:
                 {available_tools}
                 ...
-                You will call agents based on user requirement and deliver the answer.
+                You will call agents based on user requirement and deliver the answer. Dont call them if not required, and answer yourself then.
                 Avoid excessive question, do as youre told. Give response in the following
                 json format: 
                 reasoning: str, tool_calls: list  -> this must be in json format. Dont add

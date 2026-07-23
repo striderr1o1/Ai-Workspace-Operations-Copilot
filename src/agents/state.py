@@ -1,8 +1,10 @@
+import operator
+from typing import Annotated
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 class graph_state(TypedDict):
-    messages: list
+    messages: Annotated[list, operator.add]
     tool_calls: list 
     knowledge_base_agent_output: str
     booking_agent_output: str

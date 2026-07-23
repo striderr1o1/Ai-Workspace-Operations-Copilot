@@ -1,4 +1,5 @@
 # from groq import Groq
+import uuid
 from agents.agent_config import get_kb_agent, get_booking_agent, get_subagents_client
 import json
 from agents.agent import agentic_workflow
@@ -13,7 +14,7 @@ agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_
 graph = agent.get_graph()
 
 
-def run_inference(query: str):
+def run_inference(query: str, thread_id: str = "thread-1"):
     result = graph.invoke({
        "messages": [{"role": "user", "content": query}],
        "tool_calls": [],
@@ -22,11 +23,13 @@ def run_inference(query: str):
        "return_to_user_decision": False,
        "response_to_user": "",
        "count": 0
-    })
-    
+    },
+    {"configurable": {"thread_id": thread_id}},
+                          )
+
     return result
 
-async def run_inference_with_stream(query: str):
+async def run_inference_with_stream(query: str, thread_id: str = "thread-1"):
     async for chunk in graph.astream(
         {
             "messages": [{"role": "user", "content": query}],
@@ -37,6 +40,7 @@ async def run_inference_with_stream(query: str):
             "response_to_user": "",
             "count": 0
         },
+    {"configurable": {"thread_id": thread_id}},
         stream_mode="updates"
     ):
         for node_name, update in chunk.items():
@@ -47,5 +51,5 @@ async def run_inference_with_stream(query: str):
                 yield f"data: {json.dumps({'event': 'knowledge base agent', 'data': update['knowledge_base_agent_output']})}\n\n"
             if node_name=="booking_agent":
                 yield f"data: {json.dumps({'event': 'booking agent', 'data': update['booking_agent_output']})}\n\n"
-            if update["return_to_user_decision"] == True and update.get("response_to_user"):
+            if update.get("return_to_user_decision") == True and update.get("response_to_user"):
                 yield f"data: {json.dumps({'event': 'final response', 'data': update['response_to_user']})}\n\n"

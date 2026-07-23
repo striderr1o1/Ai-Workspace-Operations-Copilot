@@ -19,25 +19,23 @@ class agentic_workflow:
 
     def orchestrator(self, state: graph_state) -> graph_state:
         try:
-            state["tool_calls"].clear()
             system_promptt = get_chat_completion_system_prompt(self.available_tools)
             response = get_chat_completion(llm_client=self.llm_client, state=state, model="openai/gpt-oss-120b", response_model=orchestrator_output, system_prompt = system_promptt)
             json_response = response.model_dump()
-            if json_response["return_to_user"] == True:
-                state["return_to_user_decision"] = True
-            state["messages"].append({"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
-            _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""})
-            state["tool_calls"] = json_response["tool_calls"]
-            state["return_to_user_decision"] =json_response["return_to_user"]
-            state["response_to_user"] = json_response["summary_of_agents_response"] 
-            state["count"]+=1
-            if state["count"] > 3:
-                state["return_to_user_decision"] = True
-            return state
+            count = state["count"] + 1
+            return {
+                "messages": [{"role": "assistant", "content": f"""Reasoning: {json_response['reasoning']}...
+            _                         ..agent/tool calls: {json_response['tool_calls']}...return to user decision: {json_response["return_to_user"]}"""}],
+                "tool_calls": json_response["tool_calls"],
+                "return_to_user_decision": json_response["return_to_user"] or count > 3,
+                "response_to_user": json_response["summary_of_agents_response"],
+                "count": count
+            }
         except Exception as e:
-            state["return_to_user_decision"] = True
-            state["response_to_user"] = f"An Unexpected Error Occured: {e}"
-            return state
+            return {
+                "return_to_user_decision": True,
+                "response_to_user": f"An Unexpected Error Occured: {e}"
+            }
 
     def tool_call_node(self, state: graph_state):
         try:
@@ -57,23 +55,23 @@ class agentic_workflow:
    
     def knowledge_base_agent(self, state: graph_state)-> graph_state:
         query =""
-        toolcall = state["tool_calls"][0]
+        tool_calls = list(state["tool_calls"])
+        toolcall = tool_calls[0]
         if toolcall["tool"] == "knowledge_base_agent":
             query = toolcall["argument"][0]
-            state["tool_calls"].remove(toolcall) 
+            tool_calls.remove(toolcall)
         response = self.kb_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         summary = response["messages"][-1].content
-        state["knowledge_base_agent_output"] = summary
-        return state
+        return {"knowledge_base_agent_output": summary, "tool_calls": tool_calls}
 
     def booking_agent(self, state: graph_state)-> graph_state:
         query =""
-        if len(state["tool_calls"]) != 0:
-            toolcall = state["tool_calls"][0]
+        tool_calls = list(state["tool_calls"])
+        if len(tool_calls) != 0:
+            toolcall = tool_calls[0]
             if toolcall["tool"] == "booking_agent":
                 query = toolcall["argument"][0]
-                state["tool_calls"].remove(toolcall) 
+                tool_calls.remove(toolcall)
         response = self.bk_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
-        state["booking_agent_output"] = response["messages"][-1].content
-        return state
+        return {"booking_agent_output": response["messages"][-1].content, "tool_calls": tool_calls}
 
