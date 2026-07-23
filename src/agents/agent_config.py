@@ -11,7 +11,7 @@ load_dotenv()
 
 
 
-def get_subagents_client():
+def get_orchestrator_client():
     client = instructor.from_openai(
          wrap_openai(OpenAI(
          base_url="https://openrouter.ai/api/v1",
