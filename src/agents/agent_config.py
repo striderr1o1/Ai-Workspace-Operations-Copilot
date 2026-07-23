@@ -5,6 +5,7 @@ from services.supabase_client import fetch_room_data, insert_room_data, update_r
 from openai import OpenAI
 import os
 import instructor
+from langsmith.wrappers import wrap_openai
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -12,10 +13,10 @@ load_dotenv()
 
 def get_subagents_client():
     client = instructor.from_openai(
-         OpenAI(
+         wrap_openai(OpenAI(
          base_url="https://openrouter.ai/api/v1",
          api_key=os.environ.get("OPENROUTER_API_KEY"),
-         ),
+         )),
          mode=instructor.Mode.JSON,
         )
     return client
