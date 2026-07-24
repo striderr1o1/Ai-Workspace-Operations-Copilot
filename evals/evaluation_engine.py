@@ -17,14 +17,15 @@ from agents.agent import agentic_workflow
 
 DATASET_PATH = REPO_ROOT / "evals" / "orchestrator_dataset.json"
 
+client = get_orchestrator_client()
+kb_agent = get_kb_agent()
+booking_agent = get_booking_agent()
+#agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent)
+#graph = agent.get_graph()
 
 def load_scenarios(category: str):
     with open(DATASET_PATH, "r") as f:
         dataset = json.load(f)
     return [s for s in dataset["scenarios"] if s.get("category") == category]
 
-
-client = get_orchestrator_client()
-kb_agent = get_kb_agent()
-booking_agent = get_booking_agent()
-agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent)
+def run_eval_inference(state):
