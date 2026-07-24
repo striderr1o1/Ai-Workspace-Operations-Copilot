@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.inference import router as inference_router
 from routes.ingestion import router as ingestion_router
+from routes.eval import router as eval_router
 
 app = FastAPI()
 
@@ -15,4 +16,5 @@ app.add_middleware(
 
 app.include_router(inference_router)
 app.include_router(ingestion_router)
+app.include_router(eval_router)
 

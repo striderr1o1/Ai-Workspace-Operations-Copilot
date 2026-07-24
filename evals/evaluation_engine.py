@@ -2,6 +2,7 @@
 # push the scenarios in the function, loop them.
 # break the workflow part that isnt required.
 import sys
+import json
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -13,6 +14,15 @@ load_dotenv(REPO_ROOT / ".env")
 
 from agents.agent_config import get_kb_agent, get_booking_agent, get_orchestrator_client
 from agents.agent import agentic_workflow
+
+DATASET_PATH = REPO_ROOT / "evals" / "orchestrator_dataset.json"
+
+
+def load_scenarios(category: str):
+    with open(DATASET_PATH, "r") as f:
+        dataset = json.load(f)
+    return [s for s in dataset["scenarios"] if s.get("category") == category]
+
 
 client = get_orchestrator_client()
 kb_agent = get_kb_agent()
