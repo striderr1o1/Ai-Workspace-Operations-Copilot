@@ -2,115 +2,115 @@
   "name": "copilot-orchestrator-v1",
   "layer": "orchestrator_routing",
   "version": 1,
-  "description": "Orchestrator-only evaluation scenarios. Each scenario constructs the graph state the orchestrator node sees and checks the single decision it makes — no sub-agents are invoked. Categories: initial_routing (20: routing straight after START), after_booking_response (10: dummy booking agent output present, what does it decide), after_kb_response (10: dummy knowledge base output present), empty_agent_response (10: an agent was called but returned nothing), irrelevant (10: queries no sub-agent should handle). expected.decisions is a list of acceptable decisions; a decision with return_to_user=true ignores tool calls (production routing does too). reference_response, when non-empty, is a known-good reply used to judge relevancy of the produced response.",
+  "description": "Orchestrator-only evaluation scenarios. Each scenario constructs the graph state the orchestrator node sees and checks the single decision it makes — no sub-agents are invoked. Categories: initial_routing (20: routing straight after START), after_booking_response (10: dummy booking agent output present, what does it decide), after_kb_response (10: dummy knowledge base output present), empty_agent_response (10: an agent was called but returned nothing), irrelevant (10: queries no sub-agent should handle). expected.decisions is a list of acceptable decisions, keyed to match the orchestrator's own state delta: tool_calls holds just the agent names (the orchestrator also emits a free-form 'argument' per call, which is not graded), and return_to_user_decision mirrors the field of the same name. A decision with return_to_user_decision=true ignores tool calls (production routing does too). reference_response, when non-empty, is a known-good reply used to judge relevancy of the produced response.",
   "scenarios": [
     {
       "id": 1, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "What rooms are available right now?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 2, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Book room 3 for Sarah from 2pm to 3pm today" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 3, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Is room 1 occupied?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 4, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Cancel the reservation for room 5 on Friday" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 5, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Extend my booking of room 1 until 6pm" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 6, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Mark room 3 as vacant, the meeting ended early" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 7, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Tell me about room 5" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": "",
       "notes": "Vague, but room state lives in the booking database"
     },
     {
       "id": 8, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Room availability" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": "",
       "notes": "Two-word query; still a database lookup"
     },
     {
       "id": 9, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "What is the work-from-home policy?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 10, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Summarize the employee onboarding document" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 11, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "What does the IT policy say about personal devices?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 12, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "What documents do you have in the knowledge base?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 13, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "How do I book a room in this office?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": "",
       "notes": "Process/how-to question answered from docs, not an actual booking request"
     },
     {
       "id": 14, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Are there any rules about how long I can reserve a room?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": "",
       "notes": "Reservation wording but asks for rules, which live in docs"
     },
     {
       "id": 15, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Search the docs for anything about overtime compensation" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 16, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "What's the dress code according to company policy?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": ""
     },
     {
       "id": 17, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Is room 2 free at 3pm? Also, what's the meeting room usage policy?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
       "expected": { "decisions": [
-        { "agents": ["booking_agent", "knowledge_base_agent"], "return_to_user": false },
-        { "agents": ["booking_agent"], "return_to_user": false },
-        { "agents": ["knowledge_base_agent"], "return_to_user": false }
+        { "tool_calls": ["booking_agent", "knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false }
       ] },
       "reference_response": "",
       "notes": "Needs both agents eventually; queueing both or starting with either one is acceptable for this single decision"
@@ -119,9 +119,9 @@
       "id": 18, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Book room 1 for Fatima 10-11am and tell me the visitor sign-in procedure" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
       "expected": { "decisions": [
-        { "agents": ["booking_agent", "knowledge_base_agent"], "return_to_user": false },
-        { "agents": ["booking_agent"], "return_to_user": false },
-        { "agents": ["knowledge_base_agent"], "return_to_user": false }
+        { "tool_calls": ["booking_agent", "knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false }
       ] },
       "reference_response": ""
     },
@@ -129,9 +129,9 @@
       "id": 19, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Summarize the onboarding doc and book room 2 for the new hire orientation at 9am" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
       "expected": { "decisions": [
-        { "agents": ["booking_agent", "knowledge_base_agent"], "return_to_user": false },
-        { "agents": ["knowledge_base_agent"], "return_to_user": false },
-        { "agents": ["booking_agent"], "return_to_user": false }
+        { "tool_calls": ["booking_agent", "knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false }
       ] },
       "reference_response": ""
     },
@@ -139,9 +139,9 @@
       "id": 20, "category": "initial_routing",
       "state": { "messages": [ { "role": "user", "content": "Who is in room 3 right now, and what do the office rules say about overstaying bookings?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
       "expected": { "decisions": [
-        { "agents": ["booking_agent", "knowledge_base_agent"], "return_to_user": false },
-        { "agents": ["booking_agent"], "return_to_user": false },
-        { "agents": ["knowledge_base_agent"], "return_to_user": false }
+        { "tool_calls": ["booking_agent", "knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false },
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false }
       ] },
       "reference_response": ""
     },
@@ -156,7 +156,7 @@
         "booking_agent_output": "Here is the current room data: Room 1 - occupied (booked by Ali until 3pm), Room 2 - vacant, Room 3 - occupied (team standup until 2:30pm), Room 4 - vacant, Room 5 - vacant.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Rooms 2, 4 and 5 are currently available. Room 1 is occupied by Ali until 3pm and room 3 has a team standup until 2:30pm."
     },
     {
@@ -169,7 +169,7 @@
         "booking_agent_output": "Done. I created a booking for room 3 under the name Sarah from 14:00 to 15:00 today. The room is now marked as occupied for that slot.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Room 3 is booked for Sarah today from 2pm to 3pm."
     },
     {
@@ -182,7 +182,7 @@
         "booking_agent_output": "Room 1 is currently occupied. It was booked by Hamza and the booking runs until 4pm.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Yes, room 1 is occupied. Hamza has it booked until 4pm."
     },
     {
@@ -195,7 +195,7 @@
         "booking_agent_output": "The reservation for room 5 on Friday has been cancelled and the slot is free again.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Your reservation for room 5 on Friday has been cancelled."
     },
     {
@@ -208,7 +208,7 @@
         "booking_agent_output": "Room 4 has two bookings today: 10:00-11:00 by Ayesha (design review) and 15:00-16:30 by Bilal (client call).",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Room 4 has two bookings today: Ayesha from 10 to 11am for a design review, and Bilal from 3 to 4:30pm for a client call."
     },
     {
@@ -221,7 +221,7 @@
         "booking_agent_output": "Your booking for room 1 has been updated. It now ends at 18:00.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Done, your room 1 booking now runs until 6pm."
     },
     {
@@ -234,7 +234,7 @@
         "booking_agent_output": "Room 3 status updated to vacant.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Room 3 is now marked as vacant."
     },
     {
@@ -247,7 +247,7 @@
         "booking_agent_output": "I could not create the booking: room 2 already has a reservation tomorrow from 9:00 to 10:00 by Zara. The requested slot overlaps.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Room 2 couldn't be reserved because Zara already has it booked tomorrow from 9 to 10am, which overlaps your slot. You could pick a different time or room.",
       "notes": "Tests honest relay of a booking failure rather than claiming success"
     },
@@ -261,7 +261,7 @@
         "booking_agent_output": "A new room named Falcon has been added with status vacant.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "The room Falcon has been added to the system and is currently vacant."
     },
     {
@@ -274,7 +274,7 @@
         "booking_agent_output": "Room 2 is free at 15:00 today - no bookings overlap that time.",
         "knowledge_base_agent_output": "", "count": 1
       },
-      "expected": { "decisions": [ { "agents": ["knowledge_base_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false } ] },
       "reference_response": "",
       "notes": "Half the request is answered; the orchestrator must continue to the knowledge base, not return yet"
     },
@@ -290,7 +290,7 @@
         "knowledge_base_agent_output": "According to the workspace policy document, employees may work from home up to 2 days per week with manager approval, and must be reachable during core hours 10:00-16:00.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Employees can work from home up to 2 days per week with manager approval, and must stay reachable during core hours, 10am to 4pm."
     },
     {
@@ -304,7 +304,7 @@
         "knowledge_base_agent_output": "The onboarding document covers: 1) first-day checklist (ID badge, laptop setup), 2) mandatory HR orientation within the first week, 3) assignment of an onboarding buddy, and 4) a 30-60-90 day review plan.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Onboarding covers a first-day checklist (ID badge and laptop setup), mandatory HR orientation in the first week, an onboarding buddy, and a 30-60-90 day review plan."
     },
     {
@@ -318,7 +318,7 @@
         "knowledge_base_agent_output": "The workspace policy states employees are entitled to 24 paid leave days per year, plus public holidays.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Employees get 24 paid leave days per year, plus public holidays."
     },
     {
@@ -332,7 +332,7 @@
         "knowledge_base_agent_output": "The IT policy allows personal devices on the guest network only. Accessing internal systems requires a company-managed device with MDM enrolled.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Personal devices are only allowed on the guest network; accessing internal systems requires a company-managed device with MDM."
     },
     {
@@ -346,7 +346,7 @@
         "knowledge_base_agent_output": "The knowledge base currently has these namespaces: hr-policies, it-guidelines, facilities, onboarding.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "The available namespaces are hr-policies, it-guidelines, facilities, and onboarding."
     },
     {
@@ -360,7 +360,7 @@
         "knowledge_base_agent_output": "The policy specifies smart casual on weekdays and formal wear when meeting clients.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "The dress code is smart casual on weekdays, and formal wear when meeting clients."
     },
     {
@@ -374,7 +374,7 @@
         "knowledge_base_agent_output": "I searched the knowledge base but could not find any document mentioning parking policies.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "I couldn't find any parking policy in the knowledge base.",
       "notes": "Tests honest relay of a not-found result instead of inventing a policy"
     },
@@ -389,7 +389,7 @@
         "knowledge_base_agent_output": "Security guidelines: badge access required at all entrances, visitors must be escorted, tailgating prohibited, and lost badges reported within 24 hours.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Badge access is required at all entrances, visitors must be escorted, tailgating is prohibited, and lost badges must be reported within 24 hours."
     },
     {
@@ -403,7 +403,7 @@
         "knowledge_base_agent_output": "The HR policy section 4.2 states overtime is compensated at 1.5x the hourly rate on weekdays and 2x on weekends, subject to prior approval.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Per HR policy section 4.2, overtime is paid at 1.5x the hourly rate on weekdays and 2x on weekends, subject to prior approval."
     },
     {
@@ -417,7 +417,7 @@
         "knowledge_base_agent_output": "The conference room guidelines state rooms must be booked in advance through the booking system and left clean after use.",
         "count": 1
       },
-      "expected": { "decisions": [ { "agents": ["booking_agent"], "return_to_user": false } ] },
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
       "reference_response": "",
       "notes": "Guidelines retrieved; the reservation part is still pending, so it must continue to the booking agent"
     },
@@ -432,8 +432,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["booking_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I wasn't able to get room availability from the booking system right now. Please try again in a moment.",
       "notes": "Booking agent returned nothing; retrying once or returning a graceful failure are both acceptable"
@@ -448,8 +448,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["booking_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I couldn't confirm the booking for room 3 - the booking system didn't respond. Please try again.",
       "notes": "Must not claim the booking succeeded when no confirmation came back"
@@ -464,8 +464,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["booking_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I couldn't check room 1's status right now because the booking system didn't respond."
     },
@@ -479,8 +479,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["booking_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["booking_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I couldn't confirm the cancellation for room 5 - the booking system didn't respond. The reservation may still be active.",
       "notes": "Must not claim the cancellation succeeded without confirmation"
@@ -495,8 +495,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["knowledge_base_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I couldn't retrieve the work-from-home policy right now - the knowledge base didn't return anything. Please try again."
     },
@@ -510,8 +510,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["knowledge_base_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I couldn't get a summary of the onboarding document - the knowledge base didn't respond."
     },
@@ -525,8 +525,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["knowledge_base_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I couldn't retrieve the security guidelines right now - the knowledge base returned nothing."
     },
@@ -540,8 +540,8 @@
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 1
       },
       "expected": { "decisions": [
-        { "agents": ["knowledge_base_agent"], "return_to_user": false },
-        { "agents": [], "return_to_user": true }
+        { "tool_calls": ["knowledge_base_agent"], "return_to_user_decision": false },
+        { "tool_calls": [], "return_to_user_decision": true }
       ] },
       "reference_response": "I couldn't list the document namespaces - the knowledge base didn't respond."
     },
@@ -556,7 +556,7 @@
         ],
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 3
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "I wasn't able to reach the booking system after several attempts, so I can't show room availability right now. Please try again later.",
       "notes": "Three attempts already made; the only correct decision is to stop retrying and tell the user (the count guardrail also forces this)"
     },
@@ -571,7 +571,7 @@
         ],
         "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 3
       },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "I couldn't retrieve the work-from-home policy after several attempts. Please try again later.",
       "notes": "Retry budget exhausted; must return gracefully"
     },
@@ -579,62 +579,62 @@
     {
       "id": 51, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "hi" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Hello! I can help you with meeting room bookings and questions about company documents. What do you need?"
     },
     {
       "id": 52, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "Who are you and what can you do?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "I'm the workspace operations copilot. I can manage meeting room bookings and answer questions from the company knowledge base."
     },
     {
       "id": 53, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "good morning!" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Good morning! How can I help you today - room bookings or company documents?"
     },
     {
       "id": 54, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "Thanks, that's all for now" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "You're welcome! I'm here whenever you need anything else."
     },
     {
       "id": 55, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "How are you today?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "I'm doing well, thanks for asking! How can I help you today?"
     },
     {
       "id": 56, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "What's your job?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "My job is to help run this workspace - I handle meeting room bookings and answer questions from company documents."
     },
     {
       "id": 57, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "What's 2 + 2?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "2 + 2 is 4.",
       "notes": "Trivial question; calling any sub-agent would be a routing mistake"
     },
     {
       "id": 58, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "Never mind, I don't need anything" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "No problem! I'm here if you need anything later."
     },
     {
       "id": 59, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "ok great, sounds good" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "Great! Let me know if you need anything else."
     },
     {
       "id": 60, "category": "irrelevant",
       "state": { "messages": [ { "role": "user", "content": "What's the weather like today?" } ], "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
-      "expected": { "decisions": [ { "agents": [], "return_to_user": true } ] },
+      "expected": { "decisions": [ { "tool_calls": [], "return_to_user_decision": true } ] },
       "reference_response": "I can't check the weather - I only handle meeting room bookings and company document questions.",
       "notes": "Out-of-scope request; neither agent can help, so it should say so directly"
     }

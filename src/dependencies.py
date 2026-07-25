@@ -3,14 +3,15 @@ import uuid
 from agents.agent_config import get_kb_agent, get_booking_agent, get_orchestrator_client
 import json
 from agents.agent import agentic_workflow
-# 
+from agents.graph import setup_graph
+#
 # def initialize_llm():
 #     client = Groq()
 #     return client
 client = get_orchestrator_client()
 kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()
-agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent)
+agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
 graph = agent.get_graph()
 
 

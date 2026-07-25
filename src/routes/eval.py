@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from evals.evaluation_engine import load_scenarios
+from evals.evaluation_engine import load_scenarios, run_initial_routing
 
 router = APIRouter(prefix="/eval")
 
@@ -14,7 +14,9 @@ router = APIRouter(prefix="/eval")
 @router.post("/initial-routing")
 async def eval_initial_routing():
     try:
-        return load_scenarios("initial_routing")
+        scenarios = load_scenarios("initial_routing")
+        results, eval_status = run_initial_routing(scenarios)
+        return results, eval_status
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 

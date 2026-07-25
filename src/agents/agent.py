@@ -4,9 +4,8 @@ from .agent_config import get_chat_completion, get_chat_completion_system_prompt
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents 
 from typing import Annotated 
 from .state import orchestrator_output, graph_state
-from .graph import setup_graph
 class agentic_workflow:
-    def __init__(self, llm_client, kb_agent, bk_agent):
+    def __init__(self, llm_client, kb_agent, bk_agent, setup_graph):
         self.kb_agent = kb_agent
         self.bk_agent = bk_agent
         self.llm_client = llm_client

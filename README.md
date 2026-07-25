@@ -76,16 +76,20 @@ backend/
 │   │   └── kb_tools.py         # LangChain tool wrappers (ingest, retrieve, namespaces)
 │   ├── routes/
 │   │   ├── inference.py        # /query and /query-agent (streaming)
-│   │   └── ingestion.py        # /ingestion (PDF upload)
+│   │   ├── ingestion.py        # /ingestion (PDF upload)
+│   │   └── eval.py             # /eval/* evaluation endpoints
 │   ├── services/
 │   │   └── supabase_client.py  # Room CRUD tools (fetch/insert/update)
 │   ├── utils/
 │   │   └── exceptions.py       # Custom exception classes
 │   ├── dependencies.py         # Graph assembly + inference runners
 │   └── main.py                 # FastAPI app, CORS, router registration
+├── evals/
+│   ├── evaluation_engine.py        # Scenario loader + graders
+│   └── orchestrator_dataset.json   # 60 hand-written orchestrator scenarios
 ├── ui/
 │   └── streamlit_ui.py         # Streamlit chat client
-├── tests/                      # pytest suite (see tests/TESTING_GUIDE.md)
+├── tests/                      # tool-level tests (not tracked in git)
 ├── Dockerfile
 ├── requirements.txt
 └── .env
@@ -131,6 +135,57 @@ curl -X POST http://localhost:8000/ingestion \
   -F "file=@document.pdf" \
   -F "namespace_name=workspace-docs"
 ```
+
+### `POST /eval/{category}`
+
+Run the orchestrator evaluation for one scenario category — see [Evaluation](#evaluation). One endpoint per category: `initial-routing`, `after-booking-response`, `after-kb-response`, `empty-agent-response`, `irrelevant`.
+
+```bash
+curl -X POST http://localhost:8000/eval/initial-routing
+```
+
+Returns the raw orchestrator output for each scenario alongside a pass/fail list. Each call issues one LLM request per scenario, so a 20-scenario category takes a couple of minutes.
+
+## Evaluation
+
+Routing is the part of this system most likely to regress silently: a prompt tweak that improves one kind of request can quietly break another, and nothing crashes when it does. `evals/` exists to catch that.
+
+**What is measured.** `orchestrator_dataset.json` holds 60 hand-written scenarios that each pin down the exact graph state the orchestrator node sees, then check the single decision it makes from that state. Sub-agents are never invoked — the engine calls `agentic_workflow.orchestrator(state)` directly, since that method reads only `messages`, `booking_agent_output`, `knowledge_base_agent_output`, and `count`. One LLM call per scenario, no database or vector-store access, and the code under test is the production node rather than a copy of it.
+
+**Categories**
+
+| Category                 | N  | Question it answers                                                |
+|--------------------------|----|--------------------------------------------------------------------|
+| `initial_routing`        | 20 | Straight after START, does it pick the right sub-agent?            |
+| `after_booking_response` | 10 | Booking output is present — return to the user, or keep going?     |
+| `after_kb_response`      | 10 | Knowledge base output is present — same question                   |
+| `empty_agent_response`   | 10 | An agent was called and returned nothing. Retry, or fail honestly? |
+| `irrelevant`             | 10 | Greetings and out-of-scope asks that no sub-agent should handle    |
+
+**How scenarios are graded.** `expected.decisions` is a *list* of acceptable decisions, not a single golden answer — routing isn't deterministic and several scenarios have more than one defensible next step. Scenario 17 ("Is room 2 free at 3pm? Also, what's the meeting room usage policy?") accepts queueing both agents or starting with either one, because all three lead to a correct final answer. A scenario passes if the produced decision matches any entry.
+
+Each decision is keyed to mirror the orchestrator's own state delta:
+
+```json
+{
+  "id": 1, "category": "initial_routing",
+  "state": { "messages": [ { "role": "user", "content": "What rooms are available right now?" } ],
+             "booking_agent_output": "", "knowledge_base_agent_output": "", "count": 0 },
+  "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
+  "reference_response": ""
+}
+```
+
+`tool_calls` lists just the agent names; the free-form `argument` the orchestrator sends each agent is not graded. Agent names are compared as a set, so ordering within a single decision doesn't matter. `reference_response`, where non-empty, is a known-good reply kept for judging response relevancy.
+
+**Failure modes deliberately covered.** Beyond happy-path routing, the dataset targets the ways an agent is dishonest rather than broken:
+
+- Relaying a booking conflict instead of claiming success (28)
+- Saying "not found" instead of inventing a policy (37)
+- Not claiming a booking or cancellation succeeded when no confirmation came back (42, 44)
+- Stopping once the retry budget is spent rather than looping (49, 50)
+
+**Current status.** The `initial_routing` grader is implemented; the other four endpoints return their scenario sets and are awaiting graders. Grading currently compares agent names only — `return_to_user_decision` is not yet asserted, so the 30 scenarios whose only acceptable decision is an empty `tool_calls` can't yet distinguish a correct return-to-user from a stall. Relevancy judging against `reference_response` is not implemented.
 
 ## Getting Started
 
