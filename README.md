@@ -185,7 +185,6 @@ Each decision is keyed to mirror the orchestrator's own state delta:
 - Not claiming a booking or cancellation succeeded when no confirmation came back (42, 44)
 - Stopping once the retry budget is spent rather than looping (49, 50)
 
-**Current status.** The `initial_routing` grader is implemented; the other four endpoints return their scenario sets and are awaiting graders. Grading currently compares agent names only — `return_to_user_decision` is not yet asserted, so the 30 scenarios whose only acceptable decision is an empty `tool_calls` can't yet distinguish a correct return-to-user from a stall. Relevancy judging against `reference_response` is not implemented.
 
 ## Getting Started
 
@@ -250,16 +249,6 @@ uvicorn main:app --reload
 ```
 
 The API is served at `http://localhost:8000`, with interactive docs at `http://localhost:8000/docs`.
-
-### Run the Streamlit UI
-
-With the API running, in a separate terminal:
-
-```bash
-streamlit run ui/streamlit_ui.py
-```
-
-The UI talks to the backend at `http://localhost:8000` (configurable via `API_BASE_URL` in `ui/streamlit_ui.py`).
 
 ### Run with Docker
 
