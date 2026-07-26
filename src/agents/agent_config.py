@@ -17,7 +17,7 @@ def get_orchestrator_client():
          base_url="https://openrouter.ai/api/v1",
          api_key=os.environ.get("OPENROUTER_API_KEY"),
          )),
-         mode=instructor.Mode.JSON,
+         mode=instructor.Mode.JSON_SCHEMA,
         )
     return client
 
@@ -89,9 +89,13 @@ def get_chat_completion_system_prompt(available_tools):
 def get_chat_completion(llm_client, state, model, response_model, system_prompt):
     response = llm_client.chat.completions.create(
                model=model,
-               messages=[{"role": "system", "content": system_prompt}] + state["messages"] + [{"role": "assistant", "content": f"""Agent outputs — 
+               messages=[{"role": "system", "content": system_prompt}] + state["messages"] + [{"role": "assistant", "content": f"""Agent outputs —
                         knowledge_base_agent: {state['knowledge_base_agent_output']}, booking_agent: {state['booking_agent_output']}"""}],
                response_model=response_model,
+               # JSON_SCHEMA mode sends a strict response_format; require_parameters
+               # makes OpenRouter route only to providers that actually honour it,
+               # instead of falling back to one that returns unconstrained content.
+               extra_body={"provider": {"require_parameters": True}},
                )
 
     return response
