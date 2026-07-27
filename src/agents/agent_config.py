@@ -1,7 +1,7 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
-from services.supabase_client import fetch_room_data, insert_room_data, update_room_data
+from services.room_tools import fetch_room_data, insert_room_data, update_room_data
 from openai import OpenAI
 import os
 import instructor

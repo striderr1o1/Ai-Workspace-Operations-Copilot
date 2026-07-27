@@ -19,7 +19,6 @@ client = get_orchestrator_client()
 kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()
 agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
-
 def load_dataset():
     with open(DATASET_PATH, "r") as f:
         return json.load(f)
