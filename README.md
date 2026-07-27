@@ -136,6 +136,10 @@ curl -X POST http://localhost:8000/ingestion \
   -F "namespace_name=workspace-docs"
 ```
 
+### `GET /eval/dataset`
+
+Return `orchestrator_dataset.json` along with a per-category index (`category`, `endpoint`, `count`). Read-only and cheap — it runs no evaluation. The frontend uses it to populate the scenario dropdown and preview the cases before running them.
+
 ### `POST /eval/{category}`
 
 Run the orchestrator evaluation for one scenario category — see [Evaluation](#evaluation). One endpoint per category: `initial-routing`, `after-booking-response`, `after-kb-response`, `empty-agent-response`, `irrelevant`.
@@ -144,7 +148,26 @@ Run the orchestrator evaluation for one scenario category — see [Evaluation](#
 curl -X POST http://localhost:8000/eval/initial-routing
 ```
 
-Returns the raw orchestrator output for each scenario alongside a pass/fail list. Each call issues one LLM request per scenario, so a 20-scenario category takes a couple of minutes.
+All five return the same report shape, so a caller can render any category without knowing which assertion that category's grader made:
+
+```json
+{
+  "category": "initial_routing",
+  "total": 20, "passed": 17, "failed": 3,
+  "cases": [
+    { "id": 1, "correct": true, "query": "What rooms are available right now?",
+      "expected": { "decisions": [ { "tool_calls": ["booking_agent"], "return_to_user_decision": false } ] },
+      "actual": { "tool_calls": [ { "tool": "booking_agent", "argument": ["..."] } ],
+                  "return_to_user_decision": false, "response_to_user": "", "count": 1 } }
+  ]
+}
+```
+
+`actual` is the orchestrator's raw state delta, unmodified. When the orchestrator swallows an exception it has no `tool_calls` key at all, which the graders already score as a failure — the report passes that through rather than hiding it. Each call issues one LLM request per scenario, so a 20-scenario category takes a couple of minutes.
+
+## Frontend
+
+The browser client lives in a separate repo, [`operations-copilot-js`](https://github.com/striderr1o1/operations-copilot-js) — static HTML/CSS/JS, no build step. `index.html` is the chat and ingestion view; `evals.html` drives the endpoints above: pick a category, preview its scenarios, hit play, and read the pass/fail table. Both pages point at the deployed API by default; append `?api=http://127.0.0.1:8000` to run against a local server. Serve the pages from port 3000 (`python3 -m http.server 3000`) so the browser's origin is one the CORS allowlist in `src/main.py` already accepts.
 
 ## Evaluation
 

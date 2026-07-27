@@ -20,9 +20,13 @@ kb_agent = get_kb_agent()
 booking_agent = get_booking_agent()
 agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
 
-def load_scenarios(category: str):
+def load_dataset():
     with open(DATASET_PATH, "r") as f:
-        dataset = json.load(f)
+        return json.load(f)
+
+
+def load_scenarios(category: str):
+    dataset = load_dataset()
     return [s for s in dataset["scenarios"] if s.get("category") == category]
 
 
@@ -42,8 +46,8 @@ def run_initial_routing(scenarios):
             if set(toolcalls) == set(tools_called):
                 tool_calls_same = True
                 break
-        evaluation_status.append(tool_calls_same) 
-    return results, evaluation_status
+        evaluation_status.append(tool_calls_same)
+    return evaluation_status, results
 
 def run_after_agent_response(scenarios):
     """Grade a mid-run decision: a sub agent has already answered, so the
