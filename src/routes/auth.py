@@ -18,7 +18,6 @@ async def signup(credentials: Credentials):
     try:
         return sign_up(credentials.email, credentials.password)
     except AuthenticationError as e:
-        # the service layer already worked out the right code (email taken, weak password, ...)
         raise HTTPException(status_code=e.status_code, detail=e.text)
 
 
@@ -27,5 +26,4 @@ async def login(credentials: Credentials):
     try:
         return sign_in(credentials.email, credentials.password)
     except AuthenticationError as e:
-        # 401 for bad credentials, 429 if GoTrue is rate limiting the caller
         raise HTTPException(status_code=e.status_code, detail=e.text)

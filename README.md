@@ -81,7 +81,7 @@ backend/
 │   │   └── auth.py             # /auth/signup and /auth/login
 │   ├── services/
 │   │   ├── supabase_client.py  # Supabase client initialization
-│   │   ├── room_tools.py       # Room CRUD tools (fetch/insert/update)
+│   │   ├── booking_tools.py    # Room CRUD tools (fetch/insert/update)
 │   │   └── auth_logic.py       # Supabase Auth signup/login
 │   ├── utils/
 │   │   └── exceptions.py       # Custom exception classes

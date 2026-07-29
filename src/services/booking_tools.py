@@ -8,7 +8,7 @@ supabase = get_supabase_client()
 def fetch_room_data():
     """Fetch room data to check if which rooms are available"""
     try:
-        response = (supabase.table("rooms")
+        response = (supabase.table("")
         .select("*")
         .execute())
         return response
@@ -28,7 +28,7 @@ def update_room_data(Json_object):
         - reservation_date (date): date of the reservation
     """
     try:
-        response = (supabase.table('rooms')
+        response = (supabase.table('')
                     .upsert(Json_object)
                     .execute())
         return response
@@ -47,7 +47,7 @@ def insert_room_data():
 
     """
     try:
-        response = (supabase.table("rooms")
+        response = (supabase.table("")
             .insert({
                 "occupied_status": False,
             })

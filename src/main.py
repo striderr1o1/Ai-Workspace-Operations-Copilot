@@ -4,8 +4,12 @@ from routes.inference import router as inference_router
 from routes.ingestion import router as ingestion_router
 from routes.eval import router as eval_router
 from routes.auth import router as auth_router
+from utils.exceptions import AuthenticationError
+from utils.exception_handlers import authentication_error_handler
 
 app = FastAPI()
+
+app.add_exception_handler(AuthenticationError, authentication_error_handler)
 
 app.add_middleware(
     CORSMiddleware,

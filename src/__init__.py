@@ -3,5 +3,5 @@ from agents.agent_config import get_kb_agent, get_booking_agent, get_chat_comple
 from agents.state import orchestrator_output, graph_state
 from agents.graph import setup_graph
 from KnowledgeBaseTool.kb_tools import retrieve_documents, ingest_documents
-from services.room_tools import fetch_room_data, update_room_data, insert_room_data
+from services.booking_tools import fetch_room_data, update_room_data, insert_room_data
 

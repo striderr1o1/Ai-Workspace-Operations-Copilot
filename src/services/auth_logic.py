@@ -9,7 +9,7 @@ carries the status code Supabase reported.
 from supabase import AuthApiError, AuthError
 from services.supabase_client import create_auth_client
 from utils.exceptions import AuthenticationError
-
+from fastapi import Request
 
 def _serialize_user(user):
     """Trim the GoTrue user down to what a client is allowed to see."""
@@ -40,6 +40,45 @@ def _serialize_session(session):
         "expires_at": session.expires_at,
     }
 
+def check_session_exists(req: Request):
+    """FastAPI dependency: verify the caller's bearer token against Supabase.
+
+    Protected routes take this as a `Depends(...)` and get the serialized user
+    back, so the handler never touches the raw token. Anything that is not a
+    live session raises AuthenticationError; main.py turns that into the right
+    HTTP status, because a dependency runs *before* the route body and so cannot
+    be covered by the per-route try/except that /auth uses.
+    """
+    header = req.headers.get("Authorization", "")
+    # scheme is case-insensitive per RFC 6750; the token itself is not
+    scheme, _, token = header.partition(" ")
+    token = token.strip()
+    if scheme.lower() != "bearer" or not token:
+        raise AuthenticationError("Missing bearer token", status_code=401)
+
+    # per-call client: get_user sends the caller's JWT, and that identity must not
+    # stick to the shared client afterwards (see create_auth_client)
+    supabase = create_auth_client()
+    try:
+        # asks GoTrue instead of decoding the JWT locally, so a session that was
+        # revoked or a user that was deleted is rejected now rather than staying
+        # trusted until the token's own expiry
+        response = supabase.auth.get_user(token)
+    except AuthApiError as e:
+        # expired, malformed, revoked - all 401 to the client whatever GoTrue called it
+        raise AuthenticationError(e.message, status_code=401) from e
+    except AuthError as e:
+        raise AuthenticationError(str(e), status_code=401) from e
+    except Exception as e:
+        # network/config failure - ours, not the caller's
+        raise AuthenticationError(f"Session check failed: {e}", status_code=500) from e
+
+    # get_user returns None when it had no jwt to work with, and a UserResponse can
+    # still carry user=None; neither is a session
+    if response is None or response.user is None:
+        raise AuthenticationError("Invalid or expired session", status_code=401)
+
+    return _serialize_user(response.user)
 
 def sign_up(email: str, password: str):
     """Register a new user.
