@@ -7,9 +7,10 @@ from agents.graph import setup_graph
 
 def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
     user_id = user["id"]
+    access_token = user["access_token"]
     client = get_orchestrator_client()
     kb_agent = get_kb_agent(user_id)
-    booking_agent = get_booking_agent(user_id)
+    booking_agent = get_booking_agent(user_id, access_token)
     agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
     graph = agent.get_graph()
 
@@ -29,9 +30,10 @@ def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
 
 async def run_inference_with_stream(query: str, user: dict, thread_id: str = "thread-1"):
     user_id = user["id"]
+    access_token = user["access_token"]
     client = get_orchestrator_client()
     kb_agent = get_kb_agent(user_id)
-    booking_agent = get_booking_agent(user_id)
+    booking_agent = get_booking_agent(user_id, access_token)
     agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
     graph = agent.get_graph()
 

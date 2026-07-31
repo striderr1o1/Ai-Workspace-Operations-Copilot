@@ -78,7 +78,7 @@ def check_session_exists(req: Request):
     if response is None or response.user is None:
         raise AuthenticationError("Invalid or expired session", status_code=401)
 
-    return _serialize_user(response.user)
+    return {**(_serialize_user(response.user)), "access_token": token}
 
 def sign_up(email: str, password: str):
     """Register a new user.

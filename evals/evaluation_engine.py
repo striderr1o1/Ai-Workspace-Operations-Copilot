@@ -15,10 +15,16 @@ from agents.graph import setup_graph
 
 DATASET_PATH = REPO_ROOT / "evals" / "orchestrator_dataset.json"
 
-client = get_orchestrator_client()
-kb_agent = get_kb_agent()
-booking_agent = get_booking_agent()
-agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
+
+def _get_agent(user: dict):
+    user_id = user["id"]
+    access_token = user["access_token"]
+    client = get_orchestrator_client()
+    kb_agent = get_kb_agent(user_id)
+    booking_agent = get_booking_agent(user_id, access_token)
+    return agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
+
+
 def load_dataset():
     with open(DATASET_PATH, "r") as f:
         return json.load(f)
@@ -29,7 +35,8 @@ def load_scenarios(category: str):
     return [s for s in dataset["scenarios"] if s.get("category") == category]
 
 
-def run_initial_routing(scenarios):
+def run_initial_routing(scenarios, user: dict):
+    agent = _get_agent(user)
     results = []
     evaluation_status = []
     for s in scenarios:
@@ -48,11 +55,12 @@ def run_initial_routing(scenarios):
         evaluation_status.append(tool_calls_same)
     return evaluation_status, results
 
-def run_after_agent_response(scenarios):
+def run_after_agent_response(scenarios, user: dict):
     """Grade a mid-run decision: a sub agent has already answered, so the
     orchestrator either returns to the user or queues more agent calls.
     Shared by the booking and knowledge base categories, which differ only
     in which agent output the scenario state carries."""
+    agent = _get_agent(user)
     results = []
     evaluation_status = []
     for s in scenarios:
@@ -77,18 +85,19 @@ def run_after_agent_response(scenarios):
         evaluation_status.append(condition)
     return evaluation_status, results
 
-def run_after_booking_response(scenarios):
-    return run_after_agent_response(scenarios)
+def run_after_booking_response(scenarios, user: dict):
+    return run_after_agent_response(scenarios, user)
 
-def run_after_kb_response(scenarios):
-    return run_after_agent_response(scenarios)
+def run_after_kb_response(scenarios, user: dict):
+    return run_after_agent_response(scenarios, user)
 
-def run_empty_agent_response(scenarios):
+def run_empty_agent_response(scenarios, user: dict):
     """Grade the decision after a sub agent was called and came back empty:
     retry the agent once, or stop and tell the user honestly. Both the tool
     calls and the return decision are asserted here, because a wrong pairing
     (retrying while claiming to return, or stalling with no call queued) is
     the failure this category exists to catch."""
+    agent = _get_agent(user)
     results = []
     evaluation_status = []
     for s in scenarios:
@@ -113,13 +122,14 @@ def run_empty_agent_response(scenarios):
         evaluation_status.append(condition)
     return evaluation_status, results
 
-def run_irrelevant(scenarios):
+def run_irrelevant(scenarios, user: dict):
     """Grade greetings and out-of-scope asks, which no sub agent can serve, so
     the orchestrator must answer them itself. Tool calls are not compared: the
     dataset treats return_to_user_decision=true as ignoring them, matching
     tool_call_node, which ends the graph before it reads tool_calls. What is
     checked instead is that response_to_user is non-empty, since here the
     orchestrator's own reply is the entire answer the user receives."""
+    agent = _get_agent(user)
     results = []
     evaluation_status = []
     for s in scenarios:
@@ -143,5 +153,3 @@ def run_irrelevant(scenarios):
             condition = False
         evaluation_status.append(condition)
     return evaluation_status, results
-
-

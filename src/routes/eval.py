@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from services.auth_logic import check_session_exists
 
 # evaluation_engine lives in evals/ at the repo root, outside src/
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -41,17 +42,17 @@ def build_report(category: str, scenarios, evaluation_status, results):
     }
 
 
-def run_category(category: str, runner):
+def run_category(category: str, runner, user: dict):
     try:
         scenarios = load_scenarios(category)
-        evaluation_status, results = runner(scenarios)
+        evaluation_status, results = runner(scenarios, user)
         return build_report(category, scenarios, evaluation_status, results)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
 
 @router.get("/dataset")
-async def eval_dataset():
+async def eval_dataset(user: dict = Depends(check_session_exists)):
     """Serve the scenario dataset so the frontend can show what it is about to
     run before running it."""
     try:
@@ -76,25 +77,25 @@ async def eval_dataset():
 
 
 @router.post("/initial-routing")
-async def eval_initial_routing():
-    return run_category("initial_routing", run_initial_routing)
+async def eval_initial_routing(user: dict = Depends(check_session_exists)):
+    return run_category("initial_routing", run_initial_routing, user)
 
 
 @router.post("/after-booking-response")
-async def eval_after_booking_response():
-    return run_category("after_booking_response", run_after_booking_response)
+async def eval_after_booking_response(user: dict = Depends(check_session_exists)):
+    return run_category("after_booking_response", run_after_booking_response, user)
 
 
 @router.post("/after-kb-response")
-async def eval_after_kb_response():
-    return run_category("after_kb_response", run_after_kb_response)
+async def eval_after_kb_response(user: dict = Depends(check_session_exists)):
+    return run_category("after_kb_response", run_after_kb_response, user)
 
 
 @router.post("/empty-agent-response")
-async def eval_empty_agent_response():
-    return run_category("empty_agent_response", run_empty_agent_response)
+async def eval_empty_agent_response(user: dict = Depends(check_session_exists)):
+    return run_category("empty_agent_response", run_empty_agent_response, user)
 
 
 @router.post("/irrelevant")
-async def eval_irrelevant():
-    return run_category("irrelevant", run_irrelevant)
+async def eval_irrelevant(user: dict = Depends(check_session_exists)):
+    return run_category("irrelevant", run_irrelevant, user)

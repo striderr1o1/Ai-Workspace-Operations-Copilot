@@ -1,15 +1,15 @@
 from langchain_core.tools import ToolException
 from langchain.tools import tool
 from langchain_core.runnables.config import RunnableConfig
-from services.supabase_client import get_supabase_client
-
-supabase = get_supabase_client()
+from services.supabase_client import get_supabase_client_with_token
 
 @tool
 def fetch_room_data(config: RunnableConfig):
     """Fetch all slots/rooms belonging to the current user's business."""
     try:
         user_id = config["configurable"]["user_id"]
+        access_token = config["configurable"]["access_token"]
+        supabase = get_supabase_client_with_token(access_token)
         response = (supabase.table("slots")
         .select("*")
         .eq("business_id", user_id)
@@ -32,6 +32,8 @@ def update_room_data(json_object: dict, config: RunnableConfig):
     """
     try:
         user_id = config["configurable"]["user_id"]
+        access_token = config["configurable"]["access_token"]
+        supabase = get_supabase_client_with_token(access_token)
         slotid = json_object.pop("slotid")
         response = (supabase.table("slots")
                     .update(json_object)
@@ -72,6 +74,8 @@ def insert_room_data(time_start: str, time_end: str, occupier_email: str, config
     """
     try:
         user_id = config["configurable"]["user_id"]
+        access_token = config["configurable"]["access_token"]
+        supabase = get_supabase_client_with_token(access_token)
         response = (supabase.table("slots")
             .insert({
                 "business_id": user_id,
