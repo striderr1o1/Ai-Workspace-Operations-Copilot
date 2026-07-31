@@ -26,19 +26,19 @@ llm = ChatGroq(
         temperature=0,
         )
 
-def get_kb_agent():
+def get_kb_agent(user_id: str):
     agent = create_agent(
             model=llm,
             tools = [get_all_namespaces, retrieve_documents],
             )
-    return agent
+    return agent.with_config({"configurable": {"user_id": user_id}})
 
-def get_booking_agent():
+def get_booking_agent(user_id: str):
     agent = create_agent(
             model = llm,
             tools = [fetch_room_data, insert_room_data, update_room_data]
             )
-    return agent
+    return agent.with_config({"configurable": {"user_id": user_id}})
 
 def get_finance_agent():
     agent = create_agent(

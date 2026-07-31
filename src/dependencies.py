@@ -1,24 +1,17 @@
-# from groq import Groq
 import uuid
 from agents.agent_config import get_kb_agent, get_booking_agent, get_orchestrator_client
 import json
 from agents.agent import agentic_workflow
 from agents.graph import setup_graph
-#
-# def initialize_llm():
-#     client = Groq()
-#     return client
-client = get_orchestrator_client()
-kb_agent = get_kb_agent()
-booking_agent = get_booking_agent()
-agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
-graph = agent.get_graph()
 
 
 def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
-    # `user` comes from check_session_exists, so the token is already verified here.
-    # Held for the tools, which will need it to scope their queries per user.
     user_id = user["id"]
+    client = get_orchestrator_client()
+    kb_agent = get_kb_agent(user_id)
+    booking_agent = get_booking_agent(user_id)
+    agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
+    graph = agent.get_graph()
 
     result = graph.invoke({
        "messages": [{"role": "user", "content": query}],
@@ -35,8 +28,12 @@ def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
     return result
 
 async def run_inference_with_stream(query: str, user: dict, thread_id: str = "thread-1"):
-    # same as run_inference: verified upstream, kept for the tools
     user_id = user["id"]
+    client = get_orchestrator_client()
+    kb_agent = get_kb_agent(user_id)
+    booking_agent = get_booking_agent(user_id)
+    agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
+    graph = agent.get_graph()
 
     async for chunk in graph.astream(
         {
