@@ -9,6 +9,8 @@ def fetch_room_data(config: RunnableConfig):
     try:
         user_id = config["configurable"]["user_id"]
         access_token = config["configurable"]["access_token"]
+        # passed in access token to get user's client which admits him
+        #authenticated role
         supabase = get_supabase_client_with_token(access_token)
         response = (supabase.table("slots")
         .select("*")

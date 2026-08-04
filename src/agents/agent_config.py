@@ -1,6 +1,6 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
-from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents, get_all_namespaces
+from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents
 from services.booking_tools import fetch_room_data, insert_room_data, update_room_data
 from openai import OpenAI
 import os
@@ -26,12 +26,12 @@ llm = ChatGroq(
         temperature=0,
         )
 
-def get_kb_agent(user_id: str):
+def get_kb_agent(user_id: str, access_token: str):
     agent = create_agent(
             model=llm,
-            tools = [get_all_namespaces, retrieve_documents],
+            tools = [retrieve_documents],
             )
-    return agent.with_config({"configurable": {"user_id": user_id}})
+    return agent.with_config({"configurable": {"user_id": user_id, "access_token": access_token}})
 
 def get_booking_agent(user_id: str, access_token: str):
     agent = create_agent(
@@ -39,12 +39,6 @@ def get_booking_agent(user_id: str, access_token: str):
             tools = [fetch_room_data, insert_room_data, update_room_data]
             )
     return agent.with_config({"configurable": {"user_id": user_id, "access_token": access_token}})
-
-def get_finance_agent():
-    agent = create_agent(
-            model = llm, 
-            )
-    return agent
 
 def get_chat_completion_system_prompt(available_tools):
     prompt = f"""You are an orchestrator agent.

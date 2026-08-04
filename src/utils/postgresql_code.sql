@@ -41,3 +41,29 @@ on public.slots
 for delete
 to authenticated
 using (auth.uid() = business_id);
+
+-- Database function
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function initialize_pinecone_data();
+
+create function initialize_pinecone_data()
+returns trigger
+language plpgsql
+as $$
+begin
+  insert into pinecone_data_table(namespace_name, business_id)
+  values (NEW.email, NEW.id);
+  return NEW;
+end;
+$$;
+
+create policy "read_namespace_name"
+on public.pinecone_data_table
+for select
+to authenticated
+using (true);
+
+grant select on table public.pinecone_data_table to anon, authenticated;

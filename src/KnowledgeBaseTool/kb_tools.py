@@ -1,7 +1,9 @@
 from .ingestion import Ingestion
 from .retrieval import Retrieval
+from services.supabase_db_functions import get_namespacename_from_supabase
 from langchain.tools import tool
 from langchain_core.tools import ToolException
+from langchain_core.runnables import RunnableConfig
 from pinecone import Pinecone
 import os
 def ingest_documents(documents_list, namespace):
@@ -16,10 +18,13 @@ def ingest_documents(documents_list, namespace):
         raise ToolException(f"Error in using tool: {e}")
 
 @tool    
-def retrieve_documents(query, namespace_name):
+def retrieve_documents(query, config: RunnableConfig):
     """retrieve relevant documents by putting the query in
     this function, use one namespace at a time """
     try:
+        user_id = config["configurable"]["user_id"]
+        access_token = config["configurable"]["access_token"]
+        namespace_name = get_namespacename_from_supabase(access_token, user_id)
         retrieval_obj = Retrieval()
         results =retrieval_obj.retrieve(query, namespace_name)
         return results
@@ -27,11 +32,19 @@ def retrieve_documents(query, namespace_name):
         raise ToolException(f"Error in using tool: {e}")
 
 
-@tool
-def get_all_namespaces():
-    """use this function to get namespaces names"""
+#@tool
+#def get_all_namespaces():
+#    """use this function to get namespaces names"""
+#    pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
+#    index = pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
+#    stats = index.describe_index_stats()
+#    namespaces = list(stats.namespaces.keys())
+#    return namespaces
+
+def create_namespace_from_name(namespacename):
     pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
     index = pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
-    stats = index.describe_index_stats()
-    namespaces = list(stats.namespaces.keys())
-    return namespaces
+    ns = index.create_namespace(
+        name=namespacename,
+      )
+    return

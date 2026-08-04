@@ -20,7 +20,7 @@ def _get_agent(user: dict):
     user_id = user["id"]
     access_token = user["access_token"]
     client = get_orchestrator_client()
-    kb_agent = get_kb_agent(user_id)
+    kb_agent = get_kb_agent(user_id, access_token)
     booking_agent = get_booking_agent(user_id, access_token)
     return agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
 
