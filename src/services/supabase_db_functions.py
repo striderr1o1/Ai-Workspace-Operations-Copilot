@@ -1,12 +1,14 @@
-from services.supabase_client import get_supabase_client_with_token
+from supabase import Client
 
 # Database functions go here
 
-def get_namespacename_from_supabase(access_tokem: str, user_id):
-    client = get_supabase_client_with_token(access_tokem)
+def get_namespacename_from_supabase(client: Client, user_id):
     response = (client.table("pinecone_data_table")
                 .select("namespace_name")
                 .eq("business_id", user_id)
                 .execute())
     # if response is None, raise error
-    return response
+    namespace_name = ""
+    if response is not None and response.data:
+        namespace_name = response.data[0]["namespace_name"]
+    return namespace_name

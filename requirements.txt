@@ -15,8 +15,10 @@ langchain-openrouter
 instructor
 supabase
 python-multipart
-pytest
-pytest-asyncio
+pytest==9.1.1
+pytest-asyncio==1.4.0
 streamlit
 requests
 google-genai
+pytest-mock==3.15.1
+pyjwt

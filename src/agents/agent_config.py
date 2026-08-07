@@ -26,19 +26,19 @@ llm = ChatGroq(
         temperature=0,
         )
 
-def get_kb_agent(user_id: str, access_token: str):
+def get_kb_agent(user_id: str, supabase_client):
     agent = create_agent(
             model=llm,
             tools = [retrieve_documents],
             )
-    return agent.with_config({"configurable": {"user_id": user_id, "access_token": access_token}})
+    return agent.with_config({"configurable": {"user_id": user_id, "supabase_client": supabase_client}})
 
-def get_booking_agent(user_id: str, access_token: str):
+def get_booking_agent(user_id: str, supabase_client):
     agent = create_agent(
             model = llm,
             tools = [fetch_room_data, insert_room_data, update_room_data]
             )
-    return agent.with_config({"configurable": {"user_id": user_id, "access_token": access_token}})
+    return agent.with_config({"configurable": {"user_id": user_id, "supabase_client": supabase_client}})
 
 def get_chat_completion_system_prompt(available_tools):
     prompt = f"""You are an orchestrator agent.

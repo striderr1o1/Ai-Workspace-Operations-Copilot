@@ -1,5 +1,6 @@
 import uuid
 from agents.agent_config import get_kb_agent, get_booking_agent, get_orchestrator_client
+from services.supabase_client import get_supabase_client_with_token
 import json
 from agents.agent import agentic_workflow
 from agents.graph import setup_graph
@@ -9,8 +10,10 @@ def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
     user_id = user["id"]
     access_token = user["access_token"]
     client = get_orchestrator_client()
-    kb_agent = get_kb_agent(user_id, access_token)
-    booking_agent = get_booking_agent(user_id, access_token)
+    # per-request supabase client, authenticated as this user so RLS sees their auth.uid()
+    supabase_client = get_supabase_client_with_token(access_token)
+    kb_agent = get_kb_agent(user_id, supabase_client)
+    booking_agent = get_booking_agent(user_id, supabase_client)
     agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
     graph = agent.get_graph()
 
@@ -32,8 +35,10 @@ async def run_inference_with_stream(query: str, user: dict, thread_id: str = "th
     user_id = user["id"]
     access_token = user["access_token"]
     client = get_orchestrator_client()
-    kb_agent = get_kb_agent(user_id, access_token)
-    booking_agent = get_booking_agent(user_id, access_token)
+    # per-request supabase client, authenticated as this user so RLS sees their auth.uid()
+    supabase_client = get_supabase_client_with_token(access_token)
+    kb_agent = get_kb_agent(user_id, supabase_client)
+    booking_agent = get_booking_agent(user_id, supabase_client)
     agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
     graph = agent.get_graph()
 

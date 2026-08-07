@@ -25,6 +25,7 @@ def get_supabase_client_with_token(access_token: str) -> Client:
         options=ClientOptions(persist_session=False, auto_refresh_token=False),
     )
     client.postgrest.auth(access_token)
+    print(type(client))
     return client
 
 def create_auth_client() -> Client:
