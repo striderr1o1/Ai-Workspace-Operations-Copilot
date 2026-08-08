@@ -26,14 +26,14 @@ llm = ChatGroq(
         temperature=0,
         )
 
-def get_kb_agent(user_id: str, supabase_client):
+def get_kb_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
     agent = create_agent(
             model=llm,
             tools = [retrieve_documents],
             )
     return agent.with_config({"configurable": {"user_id": user_id, "supabase_client": supabase_client}})
 
-def get_booking_agent(user_id: str, supabase_client):
+def get_booking_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
     agent = create_agent(
             model = llm,
             tools = [fetch_room_data, insert_room_data, update_room_data]
@@ -91,5 +91,5 @@ def get_chat_completion(llm_client, state, model, response_model, system_prompt)
                # instead of falling back to one that returns unconstrained content.
                extra_body={"provider": {"require_parameters": True}},
                )
-
+#    print(response)
     return response
