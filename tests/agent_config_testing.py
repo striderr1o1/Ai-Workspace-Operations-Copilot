@@ -9,6 +9,7 @@ from openai import OpenAI
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 from langchain.agents import create_agent
+from unittest.mock import Mock
 
 def test_get_orchestrator_client():
     os.environ["OPENROUTER_API_KEY"] = "test-key"
@@ -67,7 +68,14 @@ def test_get_chat_completion_system_prompt():
     assert "return_to_user" in prompt
 
 def test_get_chat_completion():
-    fake_client = instructor.from_openai(OpenAI(base_url="https://mockurl.com", api_key="abcd"), mode = instructor.Mode.JSON_SCHEMA)
+    #fake_client = instructor.from_openai(OpenAI(base_url="https://mockurl.com", api_key="abcd"), mode = instructor.Mode.JSON_SCHEMA)
+    fake_client = Mock()
+    fake_client.chat.completions.create.return_value = Mock(
+            reasoning = str,
+            tool_calls = list,
+            return_to_user = bool,
+            summary_of_agents_response = str
+            )
     state: graph_state = {
         "messages": [{"role": "user", "content": "hi"}],
         "tool_calls": [],
