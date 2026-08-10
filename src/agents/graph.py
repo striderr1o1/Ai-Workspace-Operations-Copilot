@@ -2,10 +2,19 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import RetryPolicy
 from .state import graph_state
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.postgres import PostgresSaver
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+# get supabase url
 def get_checkpointer():
-    checkpointer = InMemorySaver()
-    return checkpointer
+    DB_URI = os.getenv("DATABASE_URL") # says port 5432 failed, means request goes maybe
+    with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
+        #checkpointer = checkpointer.__enter__()
+        checkpointer.setup()
+        return checkpointer
+
 
 def setup_graph(orchestrator, knowledge_base_agent, booking_agent, tool_call_node):
     checkpointer = get_checkpointer() 
