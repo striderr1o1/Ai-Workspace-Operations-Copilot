@@ -17,7 +17,7 @@ def get_checkpointer():
 
 
 def setup_graph(orchestrator, knowledge_base_agent, booking_agent, tool_call_node):
-    checkpointer = get_checkpointer() 
+    #checkpointer = get_checkpointer() 
     graph = StateGraph(graph_state)
     graph.add_node("orchestrator", orchestrator, retry_policy = RetryPolicy(max_attempts=3, initial_interval=5.0, backoff_factor=2.0))
     graph.add_node("knowledge_base_agent", knowledge_base_agent, retry_policy = RetryPolicy(max_attempts=3, initial_interval=5.0, backoff_factor=2.0))
@@ -44,4 +44,4 @@ def setup_graph(orchestrator, knowledge_base_agent, booking_agent, tool_call_nod
                                     "booking_agent": "booking_agent",
                                     "orchestrator": "orchestrator"
                                  })
-    return graph.compile(checkpointer=checkpointer)
+    return graph

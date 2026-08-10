@@ -11,11 +11,11 @@ class agentic_workflow:
         self.bk_agent = bk_agent
         self.llm_client = llm_client
         self.available_tools = [self.knowledge_base_agent, self.booking_agent]
-        self.compiled_graph = setup_graph(self.orchestrator, self.knowledge_base_agent, self.booking_agent, self.tool_call_node)
+        self.graph = setup_graph(self.orchestrator, self.knowledge_base_agent, self.booking_agent, self.tool_call_node)
         return
     
     def get_graph(self):
-        return self.compiled_graph
+        return self.graph
 
     def orchestrator(self, state: graph_state) -> graph_state:
         try:
