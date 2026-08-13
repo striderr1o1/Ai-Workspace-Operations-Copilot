@@ -12,3 +12,14 @@ def get_namespacename_from_supabase(client: Client, user_id):
     if response is not None and response.data:
         namespace_name = response.data[0]["namespace_name"]
     return namespace_name
+
+def get_thread_id_from_supabase(client: Client, user_id):
+    response = (client.table("links")
+                .select("thread_id")
+                .eq("business_id", user_id)
+                .execute()
+                )
+    thread_id = ""
+    if response is not None and response.data:
+        thread_id = response.data[0]["thread_id"]
+    return thread_id

@@ -67,3 +67,76 @@ to authenticated
 using (true);
 
 grant select on table public.pinecone_data_table to anon, authenticated;
+
+
+grant select, insert, update, delete on public.links to authenticated;
+
+create policy "read_link_data"
+on public.links 
+for select 
+to authenticated
+using (auth.uid() = business_id)
+
+alter table public.pinecone_data_table 
+enable row level security;
+
+alter table public.links
+enable row level security;
+
+---create policy "read_link_data"
+---on public.links
+---for select, insert, update
+---to authenticated  
+---using (auth.uid() = business_id);
+
+create or replace function initialize_default_link()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  chars text[] := '{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}';
+  result text := '';
+  i integer := 0;
+
+begin
+  for i in 1..8 loop
+    result := result || chars[1+random()*(array_length(chars, 1)-1)];
+  end loop;
+
+  insert into public.links(url, business_id)
+  values(result, new.id);
+  return new; 
+end;
+$$;
+
+create trigger on_auth_user_created_two
+after insert on auth.users
+for each row
+execute function initialize_default_link();
+
+create policy "link_policies_select"
+on public.links
+for select
+to authenticated 
+using (auth.uid() = business_id);
+
+create policy "link_policies_insert"
+on public.links
+for insert
+to authenticated 
+with check ((select auth.uid()) = business_id);
+
+CREATE POLICY "link_policies_update" 
+ON public.links 
+FOR UPDATE 
+TO authenticated 
+USING ((select auth.uid()) = business_id)
+WITH CHECK ((select auth.uid()) = business_id);
+
+create policy "link_policies_delete"
+on public.links
+for delete
+to authenticated 
+using (auth.uid() = business_id);

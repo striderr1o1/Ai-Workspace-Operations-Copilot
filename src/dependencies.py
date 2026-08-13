@@ -1,6 +1,7 @@
 import uuid
 from agents.agent_config import get_kb_agent, get_booking_agent, get_orchestrator_client
 from services.supabase_client import get_supabase_client_with_token
+from services.supabase_db_functions import get_thread_id_from_supabase
 import json
 from agents.agent import agentic_workflow
 from agents.graph import setup_graph
@@ -10,7 +11,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
+def run_inference(query: str, user: dict):
     user_id = user["id"]
     access_token = user["access_token"]
     client = get_orchestrator_client()
@@ -21,6 +22,7 @@ def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
     agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
     graph_builder = agent.get_graph()
     DB_URI = os.getenv("DATABASE_URL") 
+    thread_id = get_thread_id_from_supabase(supabase_client, user_id)
     with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
         checkpointer.setup()
         graph = graph_builder.compile(checkpointer=checkpointer)
@@ -39,8 +41,8 @@ def run_inference(query: str, user: dict, thread_id: str = "thread-1"):
 
         return result
 
-async def run_inference_with_stream(query: str, user: dict, thread_id: str = "thread-1"):
-    user_id = user["id"]
+async def run_inference_with_stream(query: str, user: dict): #should get thread-id from links table
+    user_id = user["id"] 
     access_token = user["access_token"]
     client = get_orchestrator_client()
     # per-request supabase client, authenticated as this user so RLS sees their auth.uid()
@@ -50,6 +52,7 @@ async def run_inference_with_stream(query: str, user: dict, thread_id: str = "th
     agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
     graph_builder = agent.get_graph()
     DB_URI = os.getenv("DATABASE_URL")
+    thread_id = get_thread_id_from_supabase(supabase_client, user_id)
     async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
         await checkpointer.setup()
         graph = graph_builder.compile(checkpointer=checkpointer)
