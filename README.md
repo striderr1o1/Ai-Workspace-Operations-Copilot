@@ -86,12 +86,13 @@ backend/
 │   │   ├── inference.py         # POST /query, /query-agent (SSE streaming)
 │   │   ├── ingestion.py         # POST /ingestion (PDF upload)
 │   │   ├── eval.py              # GET /eval/dataset, POST /eval/{category}
-│   │   └── auth.py              # POST /auth/signup, /auth/login
+│   │   ├── auth.py              # POST /auth/signup, /auth/login
+│   │   └── frontend.py          # GET /get-url, POST /set-publish
 │   ├── services/
 │   │   ├── supabase_client.py   # Shared / per-request / per-auth-call clients
 │   │   ├── booking_tools.py     # Slot CRUD tools (scoped by business_id)
 │   │   ├── auth_logic.py        # GoTrue signup/login + session dependency
-│   │   └── supabase_db_functions.py  # Namespace lookups
+│   │   └── supabase_db_functions.py  # Namespace + links table lookups/updates
 │   ├── utils/
 │   │   ├── exceptions.py        # Ingestion / Retrieval / Authentication errors
 │   │   └── exception_handlers.py
@@ -101,7 +102,7 @@ backend/
 ├── ui/
 │   └── streamlit_ui.py          # Dev client for poking the API locally
 ├── self_docs/                   # Dated working notes and design decisions
-├── tests/                       # Manual scripts (gitignored)
+├── tests/                       # pytest suites (routes, agents, graph, DB fns)
 ├── Dockerfile
 └── requirements.txt
 ```
@@ -117,6 +118,8 @@ backend/
 | `POST /ingestion` | Public | Upload PDF → embed → Pinecone |
 | `GET /eval/dataset` | Bearer | Return all 60 eval scenarios |
 | `POST /eval/{category}` | Bearer | Run orchestrator evals for one category |
+| `GET /get-url` | Bearer | User's share URL + current publish status |
+| `POST /set-publish` | Bearer | Set the publish flag on the user's `links` row |
 
 Auth uses Supabase GoTrue. `check_session_exists` validates the bearer token by
 asking GoTrue directly (not local JWT decode), so revoked sessions are rejected
@@ -143,8 +146,8 @@ Frontend-backend communication:
 - API base resolved from `?api=` query param, then `VITE_API_BASE` env var,
   then `http://localhost:8000`
 - Dev server on port 5173 (on the CORS allowlist in `main.py`)
-- Publish state is currently **client-side only** (`localStorage`) — the
-  backend has no deployment endpoints yet
+- Publish state is persisted in Supabase via `/set-publish` and read back
+  with `/get-url`
 
 ## Supabase Database
 
@@ -163,13 +166,21 @@ The database is being built alongside the backend. Current schema:
 by a Supabase trigger on `auth.users` signup (namespace = email, business_id =
 user id).
 
+**`links` table** (per-user share/publish state):
+| Column | Type | Notes |
+|---|---|---|
+| `business_id` | uuid | Owner's auth ID, every query scoped by it |
+| `thread_id` | text | LangGraph checkpoint thread for this user |
+| `url` | text | Share URL for the published chat |
+| `published` | boolean | Toggled via `/set-publish` |
+
 All DDL lives in the Supabase dashboard — `supabase/` is gitignored, so there's
 no schema tracked in this repo.
 
 ## Evaluation
 
-No pytest suite — `tests/` is gitignored manual scripts. The eval layer is the
-regression suite.
+`tests/` holds the pytest suites (agent config, workflow/graph wiring, frontend
+routes, Supabase functions). The eval layer is the routing regression suite.
 
 `evals/orchestrator_dataset.json` has 60 hand-written scenarios across 5
 categories testing the orchestrator's routing decisions in isolation (no
@@ -191,14 +202,17 @@ streamlit run ui/streamlit_ui.py        # expects API on localhost:8000
 docker build -t ops-copilot . && docker run -p 8000:3000 --env-file .env ops-copilot
 ```
 
-Environment: `.env` with keys for OpenRouter, Groq, Pinecone, and Supabase.
+Environment: `.env` with keys for OpenRouter, Groq, Pinecone, and Supabase,
+plus `DATABASE_URL` for the Postgres checkpointer.
 `PYTHONPATH=src` must be set when running from the repo root.
 
 ## Project Status
 
 What works end to end: signup/login, streaming chat routing between two
 sub-agents, PDF ingestion into per-user Pinecone namespaces, per-user booking
-data scoping, and the eval suite with a UI.
+data scoping, per-user conversation memory (Postgres checkpointer keyed on the
+user's `links.thread_id`), publish/share state via `/get-url` + `/set-publish`,
+and the eval suite with a UI.
 
 What I'm actively working on:
 
@@ -208,10 +222,5 @@ What I'm actively working on:
   RLS. The per-request JWT client infrastructure is ready for switching to the
   anon key
 - **`/ingestion` is unauthenticated** — not tenant-scoped like booking tools
-- **No conversation memory** — graph rebuilt per request with fresh
-  `InMemorySaver`, so each query starts cold
-- **Publish status lives in Supabase** — `/set-publish` persists the
-  publish flag on the user's `links` row; `/get-url` returns the URL and
-  current published state
 - **`delete_room_data`** is stubbed and not wired to the agent
 - **Model names hardcoded** in two files rather than configured
