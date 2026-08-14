@@ -45,6 +45,17 @@ def set_published_status_in_supabase(client: Client, user_id, published: bool):
         raise ValueError(f"No links row found for user {user_id}")
     return response.data[0]["published"]
 
+def get_slots_from_supabase(client: Client, user_id):
+    response = (client.table("slots")
+                .select("*")
+                .eq("business_id", user_id)
+                .execute()
+                )
+    slots = []
+    if response is not None and response.data:
+        slots = response.data
+    return slots
+
 def get_url_from_supabase(client: Client, user_id):
     response = (client.table("links")
                     .select("url")

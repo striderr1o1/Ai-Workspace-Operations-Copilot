@@ -54,6 +54,21 @@ def test_set_publish_authenticated():
     assert response.json() == {"published": True}
 
 
+def test_get_slots_data_authenticated():
+    app = build_app()
+    app.dependency_overrides[check_session_exists] = lambda: {"id": "user-123", "access_token": "fake-token"}
+    slots = [{"slotid": "slot-1", "time_start": "2026-08-14T09:00:00+00:00", "time_end": "2026-08-14T10:00:00+00:00", "occupier_email": "a@b.com", "business_id": "user-123"}]
+    with patch("routes.frontend.get_supabase_client_with_token") as mock_get_client, \
+         patch("routes.frontend.get_slots_from_supabase", return_value=slots) as mock_get_slots:
+        mock_get_client.return_value = Mock()
+        with TestClient(app) as client:
+            response = client.get("/get-slots-data")
+    mock_get_client.assert_called_once_with("fake-token")
+    mock_get_slots.assert_called_once()
+    assert response.status_code == 200
+    assert response.json() == {"slots": slots}
+
+
 def test_get_url_unauthenticated():
     app = build_app()
     with TestClient(app) as client:

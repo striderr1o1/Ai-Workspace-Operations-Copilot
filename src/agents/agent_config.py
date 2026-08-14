@@ -67,7 +67,6 @@ def get_chat_completion_system_prompt(available_tools):
                 
                 - for rooms and reservations related queries, use the booking_agent
                 - for retrieval or general knowledge, use the knowledge_base_agent
-                - do not answer on your own without calling sub agents
                 - do not pass more than one argument in one tool, for example {{"tool": "booking_agent", "argument": ['pass query in this argument as a single string, dont pass more than one string/query, in essence, this list must contain only one element]
                 - you can communicate with the agent through the argument inside of tool in the tool_calls, for example:
 
