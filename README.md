@@ -210,7 +210,8 @@ What I'm actively working on:
 - **`/ingestion` is unauthenticated** — not tenant-scoped like booking tools
 - **No conversation memory** — graph rebuilt per request with fresh
   `InMemorySaver`, so each query starts cold
-- **No deployment endpoints** — publish/unpublish and slug are in browser
-  storage, not the backend
+- **Publish status lives in Supabase** — `/set-publish` persists the
+  publish flag on the user's `links` row; `/get-url` returns the URL and
+  current published state
 - **`delete_room_data`** is stubbed and not wired to the agent
 - **Model names hardcoded** in two files rather than configured

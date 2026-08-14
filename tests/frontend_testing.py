@@ -42,10 +42,16 @@ def test_get_url_authenticated():
 def test_set_publish_authenticated():
     app = build_app()
     app.dependency_overrides[check_session_exists] = lambda: {"id": "user-123", "access_token": "fake-token"}
-    with TestClient(app) as client:
-        response = client.post("/set-publish", json={"published": True})
+    # patch at the point of use in the route so no real client/DB call happens
+    with patch("routes.frontend.get_supabase_client_with_token") as mock_get_client, \
+         patch("routes.frontend.set_published_status_in_supabase", return_value=True) as mock_set_published:
+        mock_get_client.return_value = Mock()
+        with TestClient(app) as client:
+            response = client.post("/set-publish", json={"published": True})
+    mock_get_client.assert_called_once_with("fake-token")
+    mock_set_published.assert_called_once()
     assert response.status_code == 200
-    assert response.json() == {}
+    assert response.json() == {"published": True}
 
 
 def test_get_url_unauthenticated():

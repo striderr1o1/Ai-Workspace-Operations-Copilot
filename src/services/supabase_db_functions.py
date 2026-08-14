@@ -35,6 +35,16 @@ def get_published_status_from_supabase(client: Client, user_id):
         published = response.data[0]["published"]
     return published
 
+def set_published_status_in_supabase(client: Client, user_id, published: bool):
+    response = (client.table("links")
+                .update({"published": published})
+                .eq("business_id", user_id)
+                .execute()
+                )
+    if response is None or not response.data:
+        raise ValueError(f"No links row found for user {user_id}")
+    return response.data[0]["published"]
+
 def get_url_from_supabase(client: Client, user_id):
     response = (client.table("links")
                     .select("url")
