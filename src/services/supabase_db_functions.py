@@ -67,4 +67,13 @@ def get_url_from_supabase(client: Client, user_id):
         url= response.data[0]["url"]
     return url
 
-
+def get_publish_status_from_supabase(client: Client, user_id):
+    response = (client.table("links")
+                .select("published")
+                .eq("business_id", user_id)
+                .execute()
+                )
+    status = False
+    if response is not None and response.data:
+        status = response.data[0]["published"]
+    return status

@@ -16,3 +16,7 @@ class AuthenticationError(Exception):
         self.status_code = status_code
         super().__init__(f"Authentication Error: {text}")
 
+class BadRequestError(Exception):
+    def __init__(self, text):
+        self.text = text
+        super().__init__(f"Bad request: {text}")
