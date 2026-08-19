@@ -87,7 +87,6 @@ def get_business_id_from_url_string(client: Client, url_string):
             .execute()
             )
     business_id = ""
-    print(response)
     if response is not None and response.data:
         business_id = response.data[0]["business_id"]
     return business_id

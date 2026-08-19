@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from dependencies import run_inference_with_stream
 from services.auth_logic import check_session_exists
+from utils.exceptions import BadRequestError
 from services.supabase_db_functions import (
     get_url_from_supabase,
     get_published_status_from_supabase,
@@ -33,6 +36,10 @@ class PublishStatus(BaseModel):
     published: bool
 
 
+class QueryRequest(BaseModel):
+    query: str
+
+
 @router.post("/set-publish")
 async def set_publish(status: PublishStatus, user: dict = Depends(check_session_exists)):
     try:
@@ -57,10 +64,18 @@ async def get_slots_data(user: dict = Depends(check_session_exists)):
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
 @router.post("/c/query-agent/{url_string}")
-async def customer_query(url_string: str, request: Request):
-    print(url_string) # maybe create a role in the database "customer"
-    client = get_supabase_anon_client()
-    business_id = get_business_id_from_url_string(client, url_string)
-    print(business_id)
-    return {"business_id": business_id}
+async def customer_query(url_string: str, inf: QueryRequest):
+    try:
+        client = get_supabase_anon_client()
+        business_id = get_business_id_from_url_string(client, url_string)
+        publish_status = get_published_status_from_supabase(client, business_id)
+        if publish_status is not True:
+            raise BadRequestError("URL not published")
+        user = {"id": business_id}
+        return StreamingResponse(
+            run_inference_with_stream(inf.query, user, client),
+            media_type="text/event-stream",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 

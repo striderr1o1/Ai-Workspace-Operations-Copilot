@@ -141,10 +141,26 @@ for delete
 to authenticated 
 using (auth.uid() = business_id);
 
-grant select (url, business_id) on table public.links to anon;
+grant select on table public.links to anon;
 
 create policy "anon_get_business_id_from_urlstring"
 on public.links 
 for select
 to anon
 using (true)
+
+grant select(namespace_name, business_id) on table public.pinecone_data_table to anon;
+
+grant select on table public.slots to anon;
+
+create policy "namespace_anon_allow_throught_businessID"
+on public.pinecone_data_table
+for select
+to anon     
+using (true);
+
+create policy "read_slots_anon"
+on public.slots
+for select
+to anon
+using (true);
