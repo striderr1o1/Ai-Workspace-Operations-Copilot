@@ -10,7 +10,7 @@ def fetch_room_data(config: RunnableConfig):
         # per-request client, threaded via RunnableConfig; admits the authenticated role
         supabase = config["configurable"]["supabase_client"]
         response = (supabase.table("slots")
-        .select("*")
+        .select("time_start, time_end, occupier_email")
         .eq("business_id", user_id)
         .execute())
         return response
@@ -22,7 +22,7 @@ def update_room_data(json_object: dict, config: RunnableConfig):
     """Update a slot/room in the database.
 
     The json_object dict must contain:
-        - slotid (uuid): primary key, required to identify which slot to update
+        - slotid (uuid): primary key, required to identify which slot to update # possible error
         - time_start (timestamptz): reservation start datetime
         - time_end (timestamptz): reservation end datetime
         - occupier_email (citext): email of the person occupying the slot

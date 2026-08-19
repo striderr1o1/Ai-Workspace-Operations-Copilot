@@ -1,7 +1,6 @@
 from supabase import Client
-
+from .supabase_client import get_supabase_client
 # Database functions go here
-
 def get_namespacename_from_supabase(client: Client, user_id):
     response = (client.table("pinecone_data_table")
                 .select("namespace_name")
@@ -47,7 +46,7 @@ def set_published_status_in_supabase(client: Client, user_id, published: bool):
 
 def get_slots_from_supabase(client: Client, user_id):
     response = (client.table("slots")
-                .select("*")
+                .select("time_start, time_end, occupier_email")
                 .eq("business_id", user_id)
                 .execute()
                 )
@@ -77,3 +76,20 @@ def get_publish_status_from_supabase(client: Client, user_id):
     if response is not None and response.data:
         status = response.data[0]["published"]
     return status
+
+def get_business_id_from_url_string(client: Client, url_string):
+    #response = (client.table()) # get from auth table? match link id to business id?
+    # maybe create a new policy, where (url_string = extracted_url_string)
+    response = (
+            client.table("links")
+            .select("business_id")
+            .eq("url", url_string)
+            .execute()
+            )
+    business_id = ""
+    print(response)
+    if response is not None and response.data:
+        business_id = response.data[0]["business_id"]
+    return business_id
+
+

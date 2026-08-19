@@ -6,11 +6,16 @@ load_dotenv()
 
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_apikey = os.environ.get("SUPABASE_KEY")
-
+supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
 supabase: Client = create_client(supabase_url, supabase_apikey)
 
 def get_supabase_client():
     return supabase
+
+def get_supabase_anon_client():
+    supabase: Client = create_client(supabase_url, supabase_anon_key)
+    return supabase
+    
 
 def get_supabase_client_with_token(access_token: str) -> Client:
     """Create a per-request Supabase client authenticated as the given user.

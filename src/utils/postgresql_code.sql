@@ -140,3 +140,11 @@ on public.links
 for delete
 to authenticated 
 using (auth.uid() = business_id);
+
+grant select (url, business_id) on table public.links to anon;
+
+create policy "anon_get_business_id_from_urlstring"
+on public.links 
+for select
+to anon
+using (true)
