@@ -9,8 +9,10 @@ from services.supabase_db_functions import (
     get_published_status_from_supabase,
     set_published_status_in_supabase,
     get_slots_from_supabase,
-    get_business_id_from_url_string
+    get_business_id_from_url_string,
+    get_namespacename_from_supabase
 )
+from KnowledgeBaseTool.kb_tools import return_record_count
 
 from services.supabase_client import get_supabase_client_with_token, get_supabase_anon_client
 router = APIRouter()
@@ -62,6 +64,19 @@ async def get_slots_data(user: dict = Depends(check_session_exists)):
         return {"slots": slots}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
+@router.get("/get-record-count")
+async def get_record_count(user: dict = Depends(check_session_exists)):
+    try:
+        user_id = user["id"]
+        access_token = user["access_token"]
+        supabase_client = get_supabase_client_with_token(access_token)
+        namespace_name = get_namespacename_from_supabase(supabase_client, user_id)
+        result = return_record_count(namespace_name)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
 
 @router.post("/c/query-agent/{url_string}")
 async def customer_query(url_string: str, inf: QueryRequest):

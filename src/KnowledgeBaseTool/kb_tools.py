@@ -48,3 +48,14 @@ def create_namespace_from_name(namespacename):
         name=namespacename,
       )
     return
+
+def return_record_count(namespacename):
+    pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
+    index = pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
+    stats = index.describe_index_stats()
+    namespace_stats = stats.namespaces.get(namespacename)
+    count = namespace_stats.vector_count if namespace_stats else 0
+    record_names = []
+    for ids in index.list(namespace=namespacename):
+        record_names.extend(ids)
+    return {"count": count, "record_names": record_names}
