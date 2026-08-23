@@ -1,6 +1,7 @@
 from langchain_core.tools import ToolException
 from langchain.tools import tool
 from langchain_core.runnables.config import RunnableConfig
+from services.email_service import get_html_content, send_email
 
 @tool
 def fetch_room_data(config: RunnableConfig):
@@ -63,7 +64,7 @@ def delete_room_data(slot_id: int, config: RunnableConfig):
 
 @tool
 def insert_room_data(time_start: str, time_end: str, occupier_email: str, config: RunnableConfig):
-    """Insert a new slot/room into the database.
+    """ inserts data into the database with a pending, and sends an email to the provided email for booking confirmation.
 
     Args:
         time_start: reservation start datetime (ISO 8601 string, e.g. '2026-07-31T09:00:00+00:00')
@@ -79,8 +80,12 @@ def insert_room_data(time_start: str, time_end: str, occupier_email: str, config
                 "time_start": time_start,
                 "time_end": time_end,
                 "occupier_email": occupier_email,
+                "status": "pending"
             })
             .execute())
+        verf_id = response.data[0]["verification_id"]
+        html_content = get_html_content(occupier_email, time_start, time_end, verf_id)
+        send_email(occupier_email, "Booking Verification", html_content) #embed a webhook link too in the email
         return response
     except Exception as e:
         raise ToolException(f"Error in tool execution: {e}")

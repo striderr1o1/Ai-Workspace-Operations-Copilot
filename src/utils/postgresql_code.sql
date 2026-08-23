@@ -153,6 +153,7 @@ grant select(namespace_name, business_id) on table public.pinecone_data_table to
 
 grant select on table public.slots to anon;
 
+
 create policy "namespace_anon_allow_throught_businessID"
 on public.pinecone_data_table
 for select
@@ -164,3 +165,15 @@ on public.slots
 for select
 to anon
 using (true);
+
+grant insert on table public.slots to anon; 
+
+create policy "allow_creating_slot"
+on public.slots
+for insert
+to anon
+with check(true);
+
+alter table public.slots
+add column status text check (status in ('pending', 'confirmed')),
+add column verification_id uuid default gen_random_uuid();
