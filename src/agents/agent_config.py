@@ -1,7 +1,7 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents
-from services.booking_tools import fetch_room_data, insert_room_data, update_room_data
+from services.booking_tools import fetch_room_data, insert_room_data
 from openai import OpenAI
 import os
 import instructor
@@ -36,7 +36,7 @@ def get_kb_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
 def get_booking_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
     agent = create_agent(
             model = llm,
-            tools = [fetch_room_data, insert_room_data, update_room_data]
+            tools = [fetch_room_data, insert_room_data]
             )
     return agent.with_config({"configurable": {"user_id": user_id, "supabase_client": supabase_client}})
 
