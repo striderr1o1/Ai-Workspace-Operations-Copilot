@@ -46,7 +46,7 @@ def set_published_status_in_supabase(client: Client, user_id, published: bool):
 
 def get_slots_from_supabase(client: Client, user_id):
     response = (client.table("slots")
-                .select("time_start, time_end, occupier_email")
+                .select("time_start, time_end, occupier_email, status")
                 .eq("business_id", user_id)
                 .execute()
                 )
@@ -76,6 +76,15 @@ def get_publish_status_from_supabase(client: Client, user_id):
     if response is not None and response.data:
         status = response.data[0]["published"]
     return status
+
+def confirm_booking_by_verification_id(client: Client, verification_id):
+    response = (client.table("slots")
+                .update({"status": "confirmed"})
+                .eq("verification_id", verification_id)
+                .execute())
+    if response is None or not response.data:
+        raise ValueError(f"No slots row found for verification_id {verification_id}")
+    return response.data[0]["status"]
 
 def get_business_id_from_url_string(client: Client, url_string):
     #response = (client.table()) # get from auth table? match link id to business id?
