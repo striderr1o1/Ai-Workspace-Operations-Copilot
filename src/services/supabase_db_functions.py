@@ -78,13 +78,9 @@ def get_publish_status_from_supabase(client: Client, user_id):
     return status
 
 def confirm_booking_by_verification_id(client: Client, verification_id):
-    response = (client.table("slots")
-                .update({"status": "confirmed"})
-                .eq("verification_id", verification_id)
+    response = (client.rpc("confirm_verification", {"verf_id": verification_id})
                 .execute())
-    if response is None or not response.data:
-        raise ValueError(f"No slots row found for verification_id {verification_id}")
-    return response.data[0]["status"]
+    return response.data
 
 def get_business_id_from_url_string(client: Client, url_string):
     #response = (client.table()) # get from auth table? match link id to business id?

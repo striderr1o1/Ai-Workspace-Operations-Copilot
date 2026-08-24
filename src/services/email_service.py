@@ -34,8 +34,7 @@ def send_email(to_email: str, subject: str, html_content: str) -> dict:
     return response.json()
 
 
-API_BASE_URL = "http://localhost:8000"
-
+API_BASE_URL = os.environ.get("API_BASE_URL") 
 
 def get_html_content(email: str, time_start: str, time_end: str, verification_id: str) -> str:
     """Build the HTML body for a booking verification email."""

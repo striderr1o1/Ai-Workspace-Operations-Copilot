@@ -10,7 +10,8 @@ from services.supabase_db_functions import (
     set_published_status_in_supabase,
     get_slots_from_supabase,
     get_business_id_from_url_string,
-    get_namespacename_from_supabase
+    get_namespacename_from_supabase,
+    confirm_booking_by_verification_id
 )
 from KnowledgeBaseTool.kb_tools import return_record_count
 
@@ -91,6 +92,16 @@ async def customer_query(url_string: str, inf: QueryRequest):
             run_inference_with_stream(inf.query, user, client),
             media_type="text/event-stream",
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
+
+@router.get("/booking-confirmation/{verification_id}")
+async def booking_confirmation(verification_id: str):
+    try:
+        client = get_supabase_anon_client()
+        confirm_booking_by_verification_id(client, verification_id)
+        return {"message": "Booking confirmed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
