@@ -26,17 +26,45 @@ llm = ChatGroq(
         temperature=0,
         )
 
+def get_kb_agent_system_prompt():
+    prompt = """You are a knowledge base agent.
+                You answer questions by retrieving relevant documents with the retrieve_documents tool.
+                You have no other tools, so you cannot ingest, list, or modify documents — only retrieve them.
+                Always call retrieve_documents with a single, focused query string before answering;
+                do not answer from memory or guess at content you have not retrieved.
+                Base your answer only on what the retrieved documents actually say. If the documents
+                don't contain the answer, say so plainly instead of making something up.
+                """
+    return prompt
+
+def get_booking_agent_system_prompt():
+    prompt = """You are a booking agent.
+                You manage room/slot reservations for the current user's business using two tools:
+                - fetch_room_data: fetches all slots/rooms belonging to the current business, including
+                  their time_start, time_end, and occupier_email.
+                - insert_room_data: creates a new reservation with a pending status and emails the
+                  occupier a confirmation link. It requires time_start and time_end as ISO 8601
+                  datetime strings (e.g. '2026-07-31T09:00:00+00:00') and occupier_email.
+                You cannot update or delete existing reservations — those tools are not available to you.
+                Before inserting a reservation, fetch the current room data if you need to check for
+                conflicts. Never invent time_start, time_end, or occupier_email values — ask for
+                whatever is missing instead of guessing.
+                """
+    return prompt
+
 def get_kb_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
     agent = create_agent(
             model=llm,
             tools = [retrieve_documents],
+            system_prompt = get_kb_agent_system_prompt(),
             )
     return agent.with_config({"configurable": {"user_id": user_id, "supabase_client": supabase_client}})
 
 def get_booking_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
     agent = create_agent(
             model = llm,
-            tools = [fetch_room_data, insert_room_data]
+            tools = [fetch_room_data, insert_room_data],
+            system_prompt = get_booking_agent_system_prompt(),
             )
     return agent.with_config({"configurable": {"user_id": user_id, "supabase_client": supabase_client}})
 
