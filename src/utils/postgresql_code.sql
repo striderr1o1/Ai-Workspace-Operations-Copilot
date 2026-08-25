@@ -145,7 +145,7 @@ grant select on table public.links to anon;
 
 create policy "anon_get_business_id_from_urlstring"
 on public.links 
-for select 
+for select
 to anon
 using (true)
 
@@ -178,16 +178,14 @@ alter table public.slots
 add column status text check (status in ('pending', 'confirmed')),
 add column verification_id uuid default gen_random_uuid();
 
--- create a database function -> takes in verification_id -> returns verification_id -> compare with actual verification id
+-- create a database function -> takes in verification_id -> sets  
+grant delete on table public.slots to authenticated;
 
-create or replace function confirm_verification(verf_id uuid)
-returns void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    update public.slots
-    set status = 'confirmed'
-    where verification_id = verf_id;
-END;
-$$;
+grant update (occupier_email, status) on table public.slots to anon;
+
+create policy "anon_claim_open_slot"
+on public.slots
+for update
+to anon
+using (occupier_email is null)
+with check (true);

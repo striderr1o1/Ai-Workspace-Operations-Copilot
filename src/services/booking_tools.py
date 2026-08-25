@@ -11,7 +11,7 @@ def fetch_room_data(config: RunnableConfig):
         # per-request client, threaded via RunnableConfig; admits the authenticated role
         supabase = config["configurable"]["supabase_client"]
         response = (supabase.table("slots")
-        .select("time_start, time_end, occupier_email")
+        .select("slotid, time_start, time_end, occupier_email")
         .eq("business_id", user_id)
         .execute())
         return response
@@ -19,26 +19,37 @@ def fetch_room_data(config: RunnableConfig):
         raise ToolException(f"Error in tool execution: {e}")
 
 @tool
-def update_room_data(json_object: dict, config: RunnableConfig):
-    """Update a slot/room in the database.
+def update_room_data(slot_id: str, occupier_email: str, config: RunnableConfig):
+    """Assign an existing slot to an occupier, and email them a confirmation link.
 
-    The json_object dict must contain:
-        - slotid (uuid): primary key, required to identify which slot to update # possible error
-        - time_start (timestamptz): reservation start datetime
-        - time_end (timestamptz): reservation end datetime
-        - occupier_email (citext): email of the person occupying the slot
+    The slot's times are set by the business and are not editable here - the only
+    thing this changes is who the slot belongs to.
 
-    Only the fields present in json_object will be updated.
+    Args:
+        slot_id: slotid of the slot to assign, as returned by fetch_room_data
+        occupier_email: email of the person taking the slot
     """
     try:
         user_id = config["configurable"]["user_id"]
         supabase = config["configurable"]["supabase_client"]
-        slotid = json_object.pop("slotid")
         response = (supabase.table("slots")
-                    .update(json_object)
-                    .eq("slotid", slotid)
+                    .update({
+                        "occupier_email": occupier_email,
+                        "status": "pending"
+                    })
+                    .eq("slotid", slot_id)
                     .eq("business_id", user_id)
                     .execute())
+        # an update matching nothing still comes back 200 with an empty list, so
+        # without this a bad slotid would silently "succeed" and send no email
+        if not response.data:
+            raise ValueError(f"No slot {slot_id} belonging to this business")
+        # times come from the row rather than the agent, so the email can only
+        # describe the slot that was actually assigned
+        slot = response.data[0]
+        verf_id = slot["verification_id"]
+        html_content = get_html_content(occupier_email, slot["time_start"], slot["time_end"], verf_id)
+        send_email(occupier_email, "Booking Verification", html_content)
         return response
     except Exception as e:
         raise ToolException(f"Error in tool execution: {e}")

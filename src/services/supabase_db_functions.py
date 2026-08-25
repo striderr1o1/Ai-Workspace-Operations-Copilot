@@ -46,7 +46,7 @@ def set_published_status_in_supabase(client: Client, user_id, published: bool):
 
 def get_slots_from_supabase(client: Client, user_id):
     response = (client.table("slots")
-                .select("time_start, time_end, occupier_email, status")
+                .select("slotid, time_start, time_end, occupier_email, status")
                 .eq("business_id", user_id)
                 .execute()
                 )
@@ -81,6 +81,38 @@ def confirm_booking_by_verification_id(client: Client, verification_id):
     response = (client.rpc("confirm_verification", {"verf_id": verification_id})
                 .execute())
     return response.data
+
+def insert_slot_into_supabase(client: Client, user_id, time_start, time_end):
+    # the business is opening an empty slot, so it starts unoccupied and pending -
+    # a customer booking through update_room_data is what fills occupier_email in
+    response = (client.table("slots")
+                .insert({
+                    "business_id": user_id,
+                    "time_start": time_start,
+                    "time_end": time_end,
+                    "occupier_email": None,
+                    "status": "pending",
+                })
+                .execute()
+                )
+    if response is None or not response.data:
+        raise ValueError(f"Slot insert returned no row for user {user_id}")
+    return response.data[0]
+
+def delete_slot_from_supabase(client: Client, user_id, slot_id):
+    # business_id is matched as well as the primary key, so a slot belonging to
+    # another business can't be deleted by guessing its slotid
+    response = (client.table("slots")
+                .delete()
+                .eq("slotid", slot_id)
+                .eq("business_id", user_id)
+                .execute()
+                )
+    # a delete that matched nothing still returns 200 with an empty list, so the
+    # caller can't tell "deleted" from "not yours / not there" without this
+    if response is None or not response.data:
+        raise ValueError(f"No slot {slot_id} found for user {user_id}")
+    return response.data[0]
 
 def get_business_id_from_url_string(client: Client, url_string):
     #response = (client.table()) # get from auth table? match link id to business id?

@@ -51,51 +51,51 @@ def run_category(category: str, runner, user: dict):
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
 
-@router.get("/dataset")
-async def eval_dataset(user: dict = Depends(check_session_exists)):
-    """Serve the scenario dataset so the frontend can show what it is about to
-    run before running it."""
-    try:
-        dataset = load_dataset()
-        counts = {}
-        for scenario in dataset["scenarios"]:
-            category = scenario.get("category")
-            counts[category] = counts.get(category, 0) + 1
-        return {
-            "name": dataset.get("name"),
-            "layer": dataset.get("layer"),
-            "version": dataset.get("version"),
-            "description": dataset.get("description"),
-            "categories": [
-                {"category": category, "endpoint": category.replace("_", "-"), "count": count}
-                for category, count in counts.items()
-            ],
-            "scenarios": dataset["scenarios"],
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
-
-
-@router.post("/initial-routing")
-async def eval_initial_routing(user: dict = Depends(check_session_exists)):
-    return run_category("initial_routing", run_initial_routing, user)
-
-
-@router.post("/after-booking-response")
-async def eval_after_booking_response(user: dict = Depends(check_session_exists)):
-    return run_category("after_booking_response", run_after_booking_response, user)
-
-
-@router.post("/after-kb-response")
-async def eval_after_kb_response(user: dict = Depends(check_session_exists)):
-    return run_category("after_kb_response", run_after_kb_response, user)
-
-
-@router.post("/empty-agent-response")
-async def eval_empty_agent_response(user: dict = Depends(check_session_exists)):
-    return run_category("empty_agent_response", run_empty_agent_response, user)
-
-
-@router.post("/irrelevant")
-async def eval_irrelevant(user: dict = Depends(check_session_exists)):
-    return run_category("irrelevant", run_irrelevant, user)
+#@router.get("/dataset")
+#async def eval_dataset(user: dict = Depends(check_session_exists)):
+#    """Serve the scenario dataset so the frontend can show what it is about to
+#    run before running it."""
+#    try:
+#        dataset = load_dataset()
+#        counts = {}
+#        for scenario in dataset["scenarios"]:
+#            category = scenario.get("category")
+#            counts[category] = counts.get(category, 0) + 1
+#        return {
+#            "name": dataset.get("name"),
+#            "layer": dataset.get("layer"),
+#            "version": dataset.get("version"),
+#            "description": dataset.get("description"),
+#            "categories": [
+#                {"category": category, "endpoint": category.replace("_", "-"), "count": count}
+#                for category, count in counts.items()
+#            ],
+#            "scenarios": dataset["scenarios"],
+#        }
+#    except Exception as e:
+#        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+#
+#
+#@router.post("/initial-routing")
+#async def eval_initial_routing(user: dict = Depends(check_session_exists)):
+#    return run_category("initial_routing", run_initial_routing, user)
+#
+#
+#@router.post("/after-booking-response")
+#async def eval_after_booking_response(user: dict = Depends(check_session_exists)):
+#    return run_category("after_booking_response", run_after_booking_response, user)
+#
+#
+#@router.post("/after-kb-response")
+#async def eval_after_kb_response(user: dict = Depends(check_session_exists)):
+#    return run_category("after_kb_response", run_after_kb_response, user)
+#
+#
+#@router.post("/empty-agent-response")
+#async def eval_empty_agent_response(user: dict = Depends(check_session_exists)):
+#    return run_category("empty_agent_response", run_empty_agent_response, user)
+#
+#
+#@router.post("/irrelevant")
+#async def eval_irrelevant(user: dict = Depends(check_session_exists)):
+#    return run_category("irrelevant", run_irrelevant, user)
