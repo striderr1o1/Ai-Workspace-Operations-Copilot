@@ -1,7 +1,7 @@
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from KnowledgeBaseTool.kb_tools import ingest_documents, retrieve_documents
-from services.booking_tools import fetch_room_data, insert_room_data
+from services.booking_tools import fetch_room_data, update_room_data
 from openai import OpenAI
 import os
 import instructor
@@ -39,16 +39,21 @@ def get_kb_agent_system_prompt():
 
 def get_booking_agent_system_prompt():
     prompt = """You are a booking agent.
-                You manage room/slot reservations for the current user's business using two tools:
-                - fetch_room_data: fetches all slots/rooms belonging to the current business, including
-                  their time_start, time_end, and occupier_email.
-                - insert_room_data: creates a new reservation with a pending status and emails the
-                  occupier a confirmation link. It requires time_start and time_end as ISO 8601
-                  datetime strings (e.g. '2026-07-31T09:00:00+00:00') and occupier_email.
-                You cannot update or delete existing reservations — those tools are not available to you.
-                Before inserting a reservation, fetch the current room data if you need to check for
-                conflicts. Never invent time_start, time_end, or occupier_email values — ask for
-                whatever is missing instead of guessing.
+                The business sets up its own slots in advance; you never create or remove them.
+                A slot with a null occupier_email is open, and your job is to assign an open slot
+                to the person you are talking to. You have two tools:
+                - fetch_room_data: fetches all slots belonging to the current business, with their
+                  slotid, time_start, time_end, and occupier_email.
+                - update_room_data: assigns one slot to an occupier and emails them a confirmation
+                  link. It takes slot_id (the slotid from fetch_room_data) and occupier_email.
+                You cannot create, delete, or reschedule slots — those tools are not available to
+                you, so a request for a time the business has not opened cannot be satisfied. Say so
+                rather than offering the nearest slot as if it were the one asked for.
+
+                Always fetch the current slots before offering anything, so you only offer slots that
+                are actually open. Tell the person which slot you propose, with its times, and call
+                update_room_data only once they have agreed to that specific slot. Never invent a
+                slotid or an occupier_email — ask for whatever is missing instead of guessing.
                 """
     return prompt
 
@@ -63,7 +68,7 @@ def get_kb_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
 def get_booking_agent(user_id: str, supabase_client, llm: ChatGroq = llm):
     agent = create_agent(
             model = llm,
-            tools = [fetch_room_data, insert_room_data],
+            tools = [fetch_room_data, update_room_data],
             system_prompt = get_booking_agent_system_prompt(),
             )
     return agent.with_config({"configurable": {"user_id": user_id, "supabase_client": supabase_client}})
@@ -74,6 +79,7 @@ def get_chat_completion_system_prompt(available_tools):
                 {available_tools}
                 ...
                 You will call agents based on user requirement and deliver the answer. Dont call them if not required, and answer yourself then.
+                If user wants to book an appointment, present them with the available slots using the booking agent.
                 Avoid excessive question, do as youre told. Give response in the following
                 json format: 
                 reasoning: str, tool_calls: list  -> this must be in json format. Dont add
@@ -98,9 +104,9 @@ def get_chat_completion_system_prompt(available_tools):
                 - do not pass more than one argument in one tool, for example {{"tool": "booking_agent", "argument": ['pass query in this argument as a single string, dont pass more than one string/query, in essence, this list must contain only one element]
                 - you can communicate with the agent through the argument inside of tool in the tool_calls, for example:
 
-                user asks: Fetch me room 1 data...
+                user asks: I want to book a room...
                 your response: 
-                {{'reasoning': 'The user wants to fetch room data, which can be done using the booking agent. I will call the booking_agent tool to retrieve the room information.', 'tool_calls': [{{'tool': 'booking_agent', 'argument': ['fetch room data relating to room 1]}}], 'return_to_user': False}}
+                {{'reasoning': 'The user wants to book a room, which can be done using the booking agent. I will call the booking_agent tool to retrieve the room information.', 'tool_calls': [{{'tool': 'booking_agent', 'argument': ['fetch room data to check which rooms are available]}}], 'return_to_user': False}}
 
                 - once the called agents have presented with their responses, return the summary using the "summary_of_agents_response". 
 

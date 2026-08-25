@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -11,7 +12,9 @@ from services.supabase_db_functions import (
     get_slots_from_supabase,
     get_business_id_from_url_string,
     get_namespacename_from_supabase,
-    confirm_booking_by_verification_id
+    confirm_booking_by_verification_id,
+    insert_slot_into_supabase,
+    delete_slot_from_supabase
 )
 from KnowledgeBaseTool.kb_tools import return_record_count
 
@@ -43,6 +46,19 @@ class QueryRequest(BaseModel):
     query: str
 
 
+class SlotCreation(BaseModel):
+    # parsed as datetimes so a malformed value is a 422 here rather than a
+    # Postgres error later; handed to the db function as ISO 8601 strings,
+    # which is what the timestamptz columns take
+    time_start: datetime
+    time_end: datetime
+
+
+class SlotDeletion(BaseModel):
+    # `slotid` is the uuid primary key on the slots table, as used by update_room_data
+    slot_id: str
+
+
 @router.post("/set-publish")
 async def set_publish(status: PublishStatus, user: dict = Depends(check_session_exists)):
     try:
@@ -65,6 +81,35 @@ async def get_slots_data(user: dict = Depends(check_session_exists)):
         return {"slots": slots}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
+@router.post("/add-slot")
+async def create_slot(creation: SlotCreation, user: dict = Depends(check_session_exists)):
+    try:
+        user_id = user["id"]
+        access_token = user["access_token"]
+        supabase_client = get_supabase_client_with_token(access_token)
+        slot = insert_slot_into_supabase(
+            supabase_client,
+            user_id,
+            creation.time_start.isoformat(),
+            creation.time_end.isoformat(),
+        )
+        return {"slot": slot}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
+
+@router.post("/delete-slot")
+async def delete_slot(deletion: SlotDeletion, user: dict = Depends(check_session_exists)):
+    try:
+        user_id = user["id"]
+        access_token = user["access_token"]
+        supabase_client = get_supabase_client_with_token(access_token)
+        deleted = delete_slot_from_supabase(supabase_client, user_id, deletion.slot_id)
+        return {"deleted": deleted}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
 
 @router.get("/get-record-count")
 async def get_record_count(user: dict = Depends(check_session_exists)):
