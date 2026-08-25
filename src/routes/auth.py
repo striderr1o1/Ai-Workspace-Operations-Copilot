@@ -18,7 +18,7 @@ class Credentials(BaseModel):
 @router.post("/signup")
 async def signup(credentials: Credentials):
     try:
-        response = create_namespace_from_name(credentials.email) #move this inside the sign up function
+        response = create_namespace_from_name(credentials.email) #move this inside the sign up function5
         return sign_up(credentials.email, credentials.password)
     except AuthenticationError as e:
         traceback.print_exc()

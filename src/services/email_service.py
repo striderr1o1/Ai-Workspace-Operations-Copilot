@@ -33,8 +33,13 @@ def send_email(to_email: str, subject: str, html_content: str) -> dict:
     response.raise_for_status()
     return response.json()
 
+def resolve_base_url():
+    railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+    if railway_domain:
+        return f"https://{railway_domain}"
+    return "http://localhost:8000"
 
-API_BASE_URL = os.environ.get("API_BASE_URL") 
+API_BASE_URL = resolve_base_url()
 
 def get_html_content(email: str, time_start: str, time_end: str, verification_id: str) -> str:
     """Build the HTML body for a booking verification email."""
