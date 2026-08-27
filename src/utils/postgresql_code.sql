@@ -178,14 +178,25 @@ alter table public.slots
 add column status text check (status in ('pending', 'confirmed')),
 add column verification_id uuid default gen_random_uuid();
 
--- create a database function -> takes in verification_id -> sets  
-grant delete on table public.slots to authenticated;
+-- create a database function -> takes in verification_id -> sets 
+-- some are missing
+alter table public.ingestions
+add column record_ids_json jsonb;
 
-grant update (occupier_email, status) on table public.slots to anon;
+grant insert on table public.ingestions to authenticated;
 
-create policy "anon_claim_open_slot"
-on public.slots
-for update
-to anon
-using (occupier_email is null)
-with check (true);
+create policy "insert_ingestion_for_authenticated"
+on public.ingestions
+for insert
+to authenticated
+with check (auth.uid()=business_id);
+
+-- postgrest asks for the inserted row back (Prefer: return=representation), so the
+-- insert alone is not enough - without select it fails 42501 permission denied
+grant select on table public.ingestions to authenticated;
+
+create policy "select_own_ingestions"
+on public.ingestions
+for select
+to authenticated
+using (auth.uid()=business_id);

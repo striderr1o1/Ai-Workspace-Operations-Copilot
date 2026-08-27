@@ -21,7 +21,7 @@ async def ingest_pdf(file: UploadFile = File(...), user: dict = Depends(check_se
         tmp_path = os.path.join(tmp_dir, file.filename)
         with open(tmp_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
-        response = ingest_documents([tmp_path], namespace_name)
+        response = ingest_documents([tmp_path], namespace_name, supabase_client, user["id"])
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")

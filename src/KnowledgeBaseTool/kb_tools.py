@@ -6,11 +6,11 @@ from langchain_core.tools import ToolException
 from langchain_core.runnables import RunnableConfig
 from pinecone import Pinecone
 import os
-def ingest_documents(documents_list, namespace):
-    """Ingestion documents in this function as a list when 
+def ingest_documents(documents_list, namespace, supabase_client=None, user_id=None):
+    """Ingestion documents in this function as a list when
     you get a list of documents to ingest"""
     try:
-        ingestion_obj = Ingestion()
+        ingestion_obj = Ingestion(supabase_client, user_id)
         for doc_path in documents_list:
             ingestion_obj.ingest_document(doc_path, namespace)
         return
