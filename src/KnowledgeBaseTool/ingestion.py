@@ -6,11 +6,19 @@ import os
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 from utils.exceptions import IngestionError
+from services.supabase_db_functions import (
+    get_pinecone_id_from_supabase,
+    insert_ingestion_into_supabase,
+)
 from .embedding_config import get_google_embeddings, get_openrouter_embeddings
 load_dotenv()
 
 class Ingestion:
-    def __init__(self): #configuration
+    def __init__(self, supabase_client=None, user_id=None): #configuration
+        # the authenticated client comes down from routes/ingestion.py so the
+        # ingestion record is written as the signed-in business, not the admin key
+        self.supabase_client = supabase_client
+        self.user_id = user_id
         self.filepath = None
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap = 200)
         ##self.embedding = OllamaEmbeddings(
@@ -27,9 +35,31 @@ class Ingestion:
         chunks = self._create_chunks(doc) 
         str_chunks, metadatas = self._convert_doc_chunks_to_str(chunks)
         embeddings_list = self._create_embeddings_from_chunks(str_chunks)
-        vectors_list = self._preparing_ingestions(embeddings_list, str_chunks, metadatas)
+        vectors_list, vector_ids = self._preparing_ingestions(embeddings_list, str_chunks, metadatas)
+        #send to database with record name
+        self._record_ingestion(vector_ids)
         self._store_in_vectordb(vectors_list, namespace)
-        return 
+        return
+
+    def _record_ingestion(self, vector_ids): #write the ingestion row in supabase
+        # no client means the caller didn't pass one (e.g. an internal call with no
+        # signed-in user) - the pinecone upsert is still the point, so don't block it
+        if self.supabase_client is None or not self.user_id:
+            return
+        try:
+            pc_id = get_pinecone_id_from_supabase(self.supabase_client, self.user_id)
+            if not pc_id:
+                raise IngestionError(f'No pinecone_data_table row for user {self.user_id}')
+            # source_name is the uploaded filename, not the temp path it was copied to
+            source_name = os.path.basename(self.filepath) if self.filepath else None
+            vector_ids_json = {"vector_ids_list": vector_ids}
+            return insert_ingestion_into_supabase(
+                self.supabase_client, self.user_id, pc_id, source_name, vector_ids_json
+            )
+        except IngestionError:
+            raise
+        except Exception as e:
+            raise IngestionError(f'Error in ingestion.py _record_ingestion(). Details: {e}')
 
     def _load_document(self): #load the document
         try:
@@ -107,6 +137,7 @@ class Ingestion:
             length_of_embeddings = len(embeddings_list)
             length_of_chunkslist = len(string_chunks)
             vectors_list = []
+            vector_ids = []
             if length_of_chunkslist == length_of_embeddings:
                 for i in range(0, length_of_chunkslist):
                     vector = {
@@ -115,8 +146,9 @@ class Ingestion:
                         "metadata": metadatas[i]
                             }
                     vectors_list.append(vector)
+                    vector_ids.append(vector['id'])
 
-            return vectors_list
+            return vectors_list, vector_ids
         except Exception:
             raise IngestionError(f'Error in ingestion.py _preparing_ingestions()')
 
