@@ -37,8 +37,8 @@ class Ingestion:
         embeddings_list = self._create_embeddings_from_chunks(str_chunks)
         vectors_list, vector_ids = self._preparing_ingestions(embeddings_list, str_chunks, metadatas)
         #send to database with record name
-        self._record_ingestion(vector_ids)
         self._store_in_vectordb(vectors_list, namespace)
+        self._record_ingestion(vector_ids)
         return
 
     def _record_ingestion(self, vector_ids): #write the ingestion row in supabase
@@ -60,6 +60,22 @@ class Ingestion:
             raise
         except Exception as e:
             raise IngestionError(f'Error in ingestion.py _record_ingestion(). Details: {e}')
+
+    def delete_ingestion_source(self, record_ids, namespace_name): #drop one source's vectors
+        try:
+            # pinecone caps delete-by-id at 1000 ids per call, so a large pdf's
+            # chunk list has to go in batches the same way the upsert does
+            batch_size = 1000
+            index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
+            for i in range(0, len(record_ids), batch_size):
+                index.delete(
+                    ids = record_ids[i: i+batch_size],
+                    namespace = namespace_name
+                )
+
+            return len(record_ids)
+        except Exception as e:
+            raise IngestionError(f'Ingestion.py -> Error deleting from vector store, delete_ingestion_source(). Details: {e}')
 
     def _load_document(self): #load the document
         try:
@@ -166,3 +182,4 @@ class Ingestion:
             return
         except Exception as e:
             raise IngestionError(f'Ingestion.py -> Error in storing in vector store, _store_in_vectordb(). Details: {e}')
+

@@ -143,6 +143,52 @@ def insert_ingestion_into_supabase(client: Client, user_id, pc_id, source_name, 
         raise ValueError(f"Ingestion insert returned no row for user {user_id}")
     return response.data[0]
 
+def get_ingestions_from_supabase(client: Client, user_id):
+    # record_ids_json is deliberately not selected - the dashboard only lists the
+    # documents, and the vector id blob is large enough to be worth not shipping
+    response = (client.table("ingestions")
+                .select("ing_id, source_name")
+                .eq("business_id", user_id)
+                .execute()
+                )
+    ingestions = []
+    if response is not None and response.data:
+        ingestions = response.data
+    return ingestions
+
+def get_record_ids_from_supabase(client: Client, user_id, ingestion_id):
+    # business_id is matched as well as the primary key, so another business's
+    # vector ids can't be read (or later deleted) by guessing an ing_id
+    response = (client.table("ingestions")
+                .select("record_ids_json")
+                .eq("ing_id", ingestion_id)
+                .eq("business_id", user_id)
+                .execute()
+                )
+    record_ids = []
+    if response is not None and response.data:
+        stored = response.data[0]["record_ids_json"]
+        # _record_ingestion writes {"vector_ids_list": [...]}, but a bare list is
+        # accepted too so a row written before that wrapper still deletes cleanly
+        if isinstance(stored, dict):
+            record_ids = stored.get("vector_ids_list") or []
+        elif isinstance(stored, list):
+            record_ids = stored
+    return record_ids
+
+def delete_ingestion_from_supabase(client: Client, user_id, ingestion_id):
+    response = (client.table("ingestions")
+                .delete()
+                .eq("ing_id", ingestion_id)
+                .eq("business_id", user_id)
+                .execute()
+                )
+    # same as delete_slot_from_supabase: a delete matching nothing is still a 200
+    # with an empty list, so "deleted" and "not yours / not there" need separating
+    if response is None or not response.data:
+        raise ValueError(f"No ingestion {ingestion_id} found for user {user_id}")
+    return response.data[0]
+
 def get_business_id_from_url_string(client: Client, url_string):
     #response = (client.table()) # get from auth table? match link id to business id?
     # maybe create a new policy, where (url_string = extracted_url_string)

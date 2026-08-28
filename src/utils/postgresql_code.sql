@@ -200,3 +200,14 @@ on public.ingestions
 for select
 to authenticated
 using (auth.uid()=business_id);
+
+-- /delete-ingested-source needs both: the grant, and a policy that keeps a
+-- business from deleting a row by guessing someone else's ing_id
+grant delete on public.ingestions to authenticated;
+
+create policy "delete_ingestion_source"
+on public.ingestions
+for delete
+to authenticated 
+using (auth.uid()=business_id)
+

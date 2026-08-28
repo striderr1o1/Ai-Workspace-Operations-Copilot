@@ -11,12 +11,15 @@ from services.supabase_db_functions import (
     set_published_status_in_supabase,
     get_slots_from_supabase,
     get_business_id_from_url_string,
-    get_namespacename_from_supabase,
     confirm_booking_by_verification_id,
     insert_slot_into_supabase,
-    delete_slot_from_supabase
+    delete_slot_from_supabase,
+    get_ingestions_from_supabase,
+    get_namespacename_from_supabase,
+    get_record_ids_from_supabase,
+    delete_ingestion_from_supabase
 )
-from KnowledgeBaseTool.kb_tools import return_record_count
+from KnowledgeBaseTool.ingestion import Ingestion
 
 from services.supabase_client import get_supabase_client_with_token, get_supabase_anon_client
 router = APIRouter()
@@ -57,6 +60,13 @@ class SlotCreation(BaseModel):
 class SlotDeletion(BaseModel):
     # `slotid` is the uuid primary key on the slots table, as used by update_room_data
     slot_id: str
+
+
+class IngestionDeletion(BaseModel):
+    # `ing_id` is the uuid primary key on the ingestions table; source_name comes
+    # along for the response and the log, the row is matched on the id
+    ingestion_id: str
+    source_name: str | None = None
 
 
 @router.post("/set-publish")
@@ -113,13 +123,43 @@ async def delete_slot(deletion: SlotDeletion, user: dict = Depends(check_session
 
 @router.get("/get-record-count")
 async def get_record_count(user: dict = Depends(check_session_exists)):
+    # one entry per ingested document now, from the ingestions table - the old
+    # pinecone-backed count returned one entry per chunk, which the dashboard
+    # can't show as a document list
     try:
         user_id = user["id"]
         access_token = user["access_token"]
         supabase_client = get_supabase_client_with_token(access_token)
+        ingestions = get_ingestions_from_supabase(supabase_client, user_id)
+        return [
+            {"ingestion_id": row["ing_id"], "source_name": row["source_name"]}
+            for row in ingestions
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
+
+@router.post("/delete-ingested-source")
+async def delete_ingested_source(deletion: IngestionDeletion, user: dict = Depends(check_session_exists)):
+    # the vectors go first: if pinecone fails the row survives, so the ids are
+    # still on record and the delete can be retried. Dropping the row first would
+    # strand the vectors in the namespace with nothing left pointing at them.
+    try:
+        user_id = user["id"]
+        access_token = user["access_token"]
+        supabase_client = get_supabase_client_with_token(access_token)
+        record_ids = get_record_ids_from_supabase(supabase_client, user_id, deletion.ingestion_id)
         namespace_name = get_namespacename_from_supabase(supabase_client, user_id)
-        result = return_record_count(namespace_name)
-        return result
+        ingestion_obj = Ingestion(supabase_client, user_id)
+        vectors_deleted = ingestion_obj.delete_ingestion_source(record_ids, namespace_name)
+        delete_ingestion_from_supabase(supabase_client, user_id, deletion.ingestion_id)
+        return {
+            "deleted": {
+                "ingestion_id": deletion.ingestion_id,
+                "source_name": deletion.source_name,
+                "vectors_deleted": vectors_deleted,
+            }
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
