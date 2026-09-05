@@ -49,6 +49,7 @@ def get_booking_agent_system_prompt():
                 You cannot create, delete, or reschedule slots — those tools are not available to
                 you, so a request for a time the business has not opened cannot be satisfied. Say so
                 rather than offering the nearest slot as if it were the one asked for.
+                Dont provide any slotID or any sort of ID in the response
 
                 Always fetch the current slots before offering anything, so you only offer slots that
                 are actually open. Tell the person which slot you propose, with its times, and call
@@ -102,6 +103,7 @@ def get_chat_completion_system_prompt(available_tools):
                 - for rooms and reservations related queries, use the booking_agent
                 - for retrieval or general knowledge, use the knowledge_base_agent
                 - do not pass more than one argument in one tool, for example {{"tool": "booking_agent", "argument": ['pass query in this argument as a single string, dont pass more than one string/query, in essence, this list must contain only one element]
+                - dont provide any slotID or any sort of ID in the response
                 - you can communicate with the agent through the argument inside of tool in the tool_calls, for example:
 
                 user asks: I want to book a room...
