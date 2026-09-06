@@ -203,3 +203,30 @@ def get_business_id_from_url_string(client: Client, url_string):
         business_id = response.data[0]["business_id"]
     return business_id
 
+def get_customer_client_side_id(client: Client, user_id, customer_clientside_id):
+    response = (
+            client.table("customers_data")
+            .select("customer_client_side_id")
+            .eq("customer_client_side_id", customer_clientside_id)
+            .eq("business_id", user_id)
+            .execute()
+            )
+    customer_cs_id = ""
+    if response is not None and response.data:
+        customer_cs_id = response.data[0]["customer_client_side_id"]
+    return customer_cs_id
+
+
+def save_customer_client_side_id_in_db(client: Client, user_id, customer_client_side_id):
+    response = (
+            client.table("customers_data")
+            .insert({
+                "customer_client_side_id": customer_client_side_id,
+                "business_id": user_id
+                }
+                )
+            .execute()
+            )
+    if response is None or not response.data:
+        raise ValueError(f"client side id not saved")
+    return response.data[0]

@@ -10,6 +10,7 @@ router = APIRouter()
 
 class inference(BaseModel):
     query: str
+    unique_id: str
 
 @router.post("/query")
 async def query_agent(inf: inference, user: dict = Depends(check_session_exists)):
@@ -23,6 +24,7 @@ async def query_agent(inf: inference, user: dict = Depends(check_session_exists)
 @router.post("/query-agent")
 async def stream_response(inf: inference, user: dict = Depends(check_session_exists)):
     try:
+        print(inf)
         supabase_client = get_supabase_client_with_token(user["access_token"])
         return StreamingResponse(run_inference_with_stream(inf.query, user, supabase_client), media_type="text/event-stream")
     except Exception as e:

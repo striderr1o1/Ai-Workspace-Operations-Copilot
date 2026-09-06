@@ -49,7 +49,7 @@ def check_session_exists(req: Request):
     HTTP status, because a dependency runs *before* the route body and so cannot
     be covered by the per-route try/except that /auth uses.
     """
-    print(req.headers)
+#    print(req.headers)
     header = req.headers.get("Authorization", "")
     # scheme is case-insensitive per RFC 6750; the token itself is not
     scheme, _, token = header.partition(" ")

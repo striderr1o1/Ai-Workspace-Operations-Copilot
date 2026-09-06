@@ -17,7 +17,9 @@ from services.supabase_db_functions import (
     get_ingestions_from_supabase,
     get_namespacename_from_supabase,
     get_record_ids_from_supabase,
-    delete_ingestion_from_supabase
+    delete_ingestion_from_supabase,
+    get_customer_client_side_id,
+    save_customer_client_side_id_in_db
 )
 from KnowledgeBaseTool.ingestion import Ingestion
 
@@ -47,6 +49,7 @@ class PublishStatus(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str
+    unique_id: str
 
 
 class SlotCreation(BaseModel):
@@ -173,6 +176,10 @@ async def customer_query(url_string: str, inf: QueryRequest):
         if publish_status is not True:
             raise BadRequestError("URL not published")
         user = {"id": business_id}
+        customer_cs_id = get_customer_client_side_id(client, business_id, inf.unique_id)
+        # saves the client side id, but doesnt increment request, nor savesmessages
+        if len(customer_cs_id) == 0:
+            response = save_customer_client_side_id_in_db(client, business_id, inf.unique_id)
         return StreamingResponse(
             run_inference_with_stream(inf.query, user, client),
             media_type="text/event-stream",

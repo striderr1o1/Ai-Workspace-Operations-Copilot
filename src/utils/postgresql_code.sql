@@ -211,3 +211,32 @@ for delete
 to authenticated 
 using (auth.uid()=business_id)
 
+create table customers_data (
+  customer_id uuid not null default gen_random_uuid(),
+  customer_client_side_id text not null unique,
+  business_id uuid references auth.users(id) on delete cascade not null,
+  total_requests smallint default 0,
+  messages jsonb 
+  
+);
+-- need to change these policies for anon
+grant insert, update, select on table public.customers_data to anon;
+
+create policy "read_customers_data"
+on public.customers_data
+for select 
+to authenticated 
+using (true); 
+
+
+create policy "insert_customers_data"
+on public.customers_data
+for insert
+to authenticated 
+with check (true);
+
+create policy "update_customers_data"
+on public.customers_data
+for insert
+to authenticated 
+with check (true);
