@@ -19,7 +19,8 @@ from services.supabase_db_functions import (
     get_record_ids_from_supabase,
     delete_ingestion_from_supabase,
     get_customer_client_side_id,
-    save_customer_client_side_id_in_db
+    save_customer_client_side_id_in_db,
+    increment_customer_requests_in_db
 )
 from KnowledgeBaseTool.ingestion import Ingestion
 
@@ -177,9 +178,13 @@ async def customer_query(url_string: str, inf: QueryRequest):
             raise BadRequestError("URL not published")
         user = {"id": business_id}
         customer_cs_id = get_customer_client_side_id(client, business_id, inf.unique_id)
-        # saves the client side id, but doesnt increment request, nor savesmessages
+        # saves the client side id, but doesnt save messages
         if len(customer_cs_id) == 0:
             response = save_customer_client_side_id_in_db(client, business_id, inf.unique_id)
+        # counted before the stream starts: StreamingResponse returns immediately
+        # and the generator runs after this handler is gone, so an increment
+        # placed after it would never be reached
+        increment_customer_requests_in_db(client, business_id, inf.unique_id)
         return StreamingResponse(
             run_inference_with_stream(inf.query, user, client),
             media_type="text/event-stream",
