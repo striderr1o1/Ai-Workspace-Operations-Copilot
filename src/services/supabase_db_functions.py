@@ -217,6 +217,37 @@ def get_customer_client_side_id(client: Client, user_id, customer_clientside_id)
     return customer_cs_id
 
 
+def increment_customer_requests_in_db(client: Client, user_id, customer_client_side_id):
+    # read-modify-write, not an atomic `total_requests = total_requests + 1`:
+    # postgrest can't express that, so two concurrent queries from the same
+    # customer can both read the same value and one increment is lost. An RPC
+    # doing the update in SQL is the fix if that ever matters.
+    # business_id is matched as well as the client side id, so one business
+    # can't touch a counter belonging to another one's customer
+    response = (
+            client.table("customers_data")
+            .select("total_requests")
+            .eq("customer_client_side_id", customer_client_side_id)
+            .eq("business_id", user_id)
+            .execute()
+            )
+    if response is None or not response.data:
+        raise ValueError(f"No customers_data row for client side id {customer_client_side_id}")
+    # the column is nullable, so a row written before the default was in place
+    # (or with an explicit null) reads back as None rather than 0
+    current = response.data[0]["total_requests"] or 0
+    response = (
+            client.table("customers_data")
+            .update({"total_requests": current + 1})
+            .eq("customer_client_side_id", customer_client_side_id)
+            .eq("business_id", user_id)
+            .execute()
+            )
+    if response is None or not response.data:
+        raise ValueError(f"total_requests not incremented for {customer_client_side_id}")
+    return response.data[0]["total_requests"]
+
+
 def save_customer_client_side_id_in_db(client: Client, user_id, customer_client_side_id):
     response = (
             client.table("customers_data")

@@ -235,8 +235,9 @@ for insert
 to authenticated 
 with check (true);
 
+
 create policy "update_customers_data"
 on public.customers_data
-for insert
-to authenticated 
-with check (true);
+to anon
+using (true)
+with check (true)
