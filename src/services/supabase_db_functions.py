@@ -261,3 +261,42 @@ def save_customer_client_side_id_in_db(client: Client, user_id, customer_client_
     if response is None or not response.data:
         raise ValueError(f"client side id not saved")
     return response.data[0]
+
+def save_customer_chat(client: Client, user_id, customer_client_side_id, user_ai_chat):
+    # read-modify-write, same as increment_customer_requests_in_db: postgrest can't
+    # express `messages = messages || $1`, so the whole transcript is read back and
+    # sent again on every turn. Two overlapping queries from the same customer can
+    # both read the same list and one turn is lost. An RPC appending in SQL is the
+    # fix if that ever matters.
+    # business_id is matched as well as the client side id, so this doubles as the
+    # ownership check - a client side id belonging to another business matches no
+    # row and never gets written to
+    response = (
+            client.table("customers_data")
+            .select("messages")
+            .eq("customer_client_side_id", customer_client_side_id)
+            .eq("business_id", user_id)
+            .execute()
+            )
+    if response is None or not response.data:
+        raise ValueError(f"client id invalid")
+
+    # the column is nullable, so a row that has never been written to (the one
+    # save_customer_client_side_id_in_db inserts) reads back as None
+    existing = response.data[0]["messages"] or []
+    # a row written before this function appended rather than overwrote holds a
+    # bare pair rather than a list of them, so it is carried over as the first entry
+    if not isinstance(existing, list):
+        existing = [existing]
+    existing.append(user_ai_chat)
+
+    response = (
+            client.table("customers_data")
+            .update({"messages": existing})
+            .eq("customer_client_side_id", customer_client_side_id)
+            .eq("business_id", user_id)
+            .execute()
+            )
+    if response is None or not response.data:
+        raise ValueError(f"Could not update the customer chat")
+    return response.data[0]["messages"]
