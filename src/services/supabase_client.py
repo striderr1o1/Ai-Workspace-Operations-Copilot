@@ -1,5 +1,5 @@
 import os
-from supabase import create_client, Client
+from supabase import create_client, Client, AsyncClient, acreate_client
 from supabase.client import ClientOptions
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,25 +12,24 @@ supabase: Client = create_client(supabase_url, supabase_apikey)
 def get_supabase_client():
     return supabase
 
-def get_supabase_anon_client():
-    supabase: Client = create_client(supabase_url, supabase_anon_key)
+async def get_supabase_anon_client():
+    supabase: AsyncClient =await acreate_client(supabase_url, supabase_anon_key)
     return supabase
     
 
-def get_supabase_client_with_token(access_token: str) -> Client:
+async def get_supabase_client_with_token(access_token: str) -> Client:
     """Create a per-request Supabase client authenticated as the given user.
 
     Sets the session with the caller's JWT so that auth.uid() resolves correctly
     in RLS policies. Each call returns a fresh client; the token does not bleed
     into other requests.
     """
-    client = create_client(
+    client: AsyncClient = await acreate_client(
         supabase_url,
         supabase_apikey,
         options=ClientOptions(persist_session=False, auto_refresh_token=False),
     )
     client.postgrest.auth(access_token)
-    print(type(client))
     return client
 
 def create_auth_client() -> Client:
