@@ -53,18 +53,18 @@ class agentic_workflow:
             state["response_to_user"] = f"An Unexpected Error Occured: {e}"
             return "end"
    
-    def knowledge_base_agent(self, state: graph_state)-> graph_state:
+    async def knowledge_base_agent(self, state: graph_state)-> graph_state:
         query =""
         tool_calls = list(state["tool_calls"])
         toolcall = tool_calls[0]
         if toolcall["tool"] == "knowledge_base_agent":
             query = toolcall["argument"][0]
             tool_calls.remove(toolcall)
-        response = self.kb_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
+        response = await self.kb_agent.ainvoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         summary = response["messages"][-1].content
         return {"knowledge_base_agent_output": summary, "tool_calls": tool_calls}
 
-    def booking_agent(self, state: graph_state)-> graph_state:
+    async def booking_agent(self, state: graph_state)-> graph_state:
         query =""
         tool_calls = list(state["tool_calls"])
         if len(tool_calls) != 0:
@@ -72,6 +72,6 @@ class agentic_workflow:
             if toolcall["tool"] == "booking_agent":
                 query = toolcall["argument"][0]
                 tool_calls.remove(toolcall)
-        response = self.bk_agent.invoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
+        response = await self.bk_agent.ainvoke({"messages": [{"role": "user", "content": f"Hi, heres your task from orchestrator: {query}"}]})
         return {"booking_agent_output": response["messages"][-1].content, "tool_calls": tool_calls}
 

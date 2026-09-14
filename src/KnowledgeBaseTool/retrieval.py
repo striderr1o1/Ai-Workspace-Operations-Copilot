@@ -1,18 +1,20 @@
 import os
 from dotenv import load_dotenv
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import AsyncPinecone, ServerlessSpec
 from utils.exceptions import RetrievalError
 from .embedding_config import get_openrouter_embeddings
 load_dotenv()
 class Retrieval:
     def __init__(self):
-        self.pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
+        # AsyncPinecone is an async context manager, so it can't be built once
+        # here in a sync __init__ - _get_results opens one per call instead.
+        self.api_key = os.environ.get('PINECONE_API_KEY')
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
         return
 
-    def retrieve(self, query, namespace):
+    async def retrieve(self, query, namespace):
         embeddings = self._create_embeddings(query)
-        results = self._get_results(embeddings, namespace)
+        results = await self._get_results(embeddings, namespace)
         return results
     def _create_embeddings(self, query):
         try:
@@ -24,18 +26,19 @@ class Retrieval:
             return embeddings
         except Exception:
             raise RetrievalError('retrieval.py: error in creating retrieval embeddings')
-    def _get_results(self, embeddings, namespace):
+    async def _get_results(self, embeddings, namespace):
         try:
-            index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
-       
-            results = index.query(
-                namespace=namespace,
-                vector=embeddings, 
-                top_k=5,
-                include_metadata=True,
-                include_values=False
-            )
- 
+            async with AsyncPinecone(api_key=self.api_key) as pc:
+                index = await pc.index(host=os.environ.get('INDEX_URL_PINECONE'))
+                async with index:
+                    results = await index.query(
+                        namespace=namespace,
+                        vector=embeddings,
+                        top_k=5,
+                        include_metadata=True,
+                        include_values=False
+                    )
+
             return results
         except Exception:
             raise RetrievalError('retrieval.py: Error in getting retrieval results')

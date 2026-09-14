@@ -174,7 +174,7 @@ async def customer_query(url_string: str, inf: QueryRequest):
     try:
         client = await get_supabase_anon_client()
         business_id = await get_business_id_from_url_string(client, url_string)
-        publish_status = get_published_status_from_supabase(client, business_id)
+        publish_status = await get_published_status_from_supabase(client, business_id)
         if publish_status is not True:
             raise BadRequestError("URL not published")
         user = {"id": business_id}
@@ -197,8 +197,8 @@ async def customer_query(url_string: str, inf: QueryRequest):
 @router.get("/booking-confirmation/{verification_id}")
 async def booking_confirmation(verification_id: str):
     try:
-        client = get_supabase_anon_client()
-        confirm_booking_by_verification_id(client, verification_id)
+        client = await get_supabase_anon_client()
+        await confirm_booking_by_verification_id(client, verification_id)
         return {"message": "Booking confirmed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")

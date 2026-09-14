@@ -20,7 +20,7 @@ async def run_inference_with_stream(query: str, user: dict, supabase_client, cus
     agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
     graph_builder = agent.get_graph()
     DB_URI = os.getenv("DATABASE_URL")
-    thread_id = get_thread_id_from_supabase(supabase_client, user_id)
+    thread_id = await get_thread_id_from_supabase(supabase_client, user_id)
     async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
         await checkpointer.setup()
         graph = graph_builder.compile(checkpointer=checkpointer)
@@ -65,6 +65,6 @@ async def run_inference_with_stream(query: str, user: dict, supabase_client, cus
             # can't become an HTTP error - raising would just truncate the SSE stream
             # on a request the customer has otherwise had answered correctly
             try:
-                save_customer_chat(supabase_client, user["id"], customer_client_side_id, user_ai_chat)
+                await save_customer_chat(supabase_client, user["id"], customer_client_side_id, user_ai_chat)
             except Exception as e:
                 print(f"Could not save customer chat for {customer_client_side_id}: {e}")

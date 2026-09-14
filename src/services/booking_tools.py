@@ -4,13 +4,13 @@ from langchain_core.runnables.config import RunnableConfig
 from services.email_service import get_html_content, send_email
 
 @tool
-def fetch_room_data(config: RunnableConfig):
+async def fetch_room_data(config: RunnableConfig):
     """Fetch all slots/rooms belonging to the current user's business."""
     try:
         user_id = config["configurable"]["user_id"]
         # per-request client, threaded via RunnableConfig; admits the authenticated role
         supabase = config["configurable"]["supabase_client"]
-        response = (supabase.table("slots")
+        response = await (supabase.table("slots")
         .select("slotid, time_start, time_end, occupier_email")
         .eq("business_id", user_id)
         .execute())
@@ -19,7 +19,7 @@ def fetch_room_data(config: RunnableConfig):
         raise ToolException(f"Error in tool execution: {e}")
 
 @tool
-def update_room_data(slot_id: str, occupier_email: str, config: RunnableConfig):
+async def update_room_data(slot_id: str, occupier_email: str, config: RunnableConfig):
     """Assign an existing slot to an occupier, and email them a confirmation link.
 
     The slot's times are set by the business and are not editable here - the only
@@ -32,7 +32,7 @@ def update_room_data(slot_id: str, occupier_email: str, config: RunnableConfig):
     try:
         user_id = config["configurable"]["user_id"]
         supabase = config["configurable"]["supabase_client"]
-        response = (supabase.table("slots")
+        response = await (supabase.table("slots")
                     .update({
                         "occupier_email": occupier_email,
                         "status": "pending"

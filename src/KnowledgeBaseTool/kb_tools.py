@@ -26,7 +26,7 @@ async def retrieve_documents(query, config: RunnableConfig):
         supabase_client = config["configurable"]["supabase_client"]
         namespace_name = await get_namespacename_from_supabase(supabase_client, user_id)
         retrieval_obj = Retrieval()
-        results =retrieval_obj.retrieve(query, namespace_name)
+        results = await retrieval_obj.retrieve(query, namespace_name)
         return results
     except Exception as e:
         raise ToolException(f"Error in using tool: {e}")

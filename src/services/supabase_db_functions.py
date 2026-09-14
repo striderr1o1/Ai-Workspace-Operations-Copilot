@@ -12,8 +12,8 @@ async def get_namespacename_from_supabase(client: Client, user_id):
         namespace_name = response.data[0]["namespace_name"]
     return namespace_name
 
-def get_thread_id_from_supabase(client: Client, user_id):
-    response = (client.table("links")
+async def get_thread_id_from_supabase(client: Client, user_id):
+    response = await (client.table("links")
                 .select("thread_id")
                 .eq("business_id", user_id)
                 .execute()
@@ -77,8 +77,8 @@ async def get_publish_status_from_supabase(client: Client, user_id):
         status = response.data[0]["published"]
     return status
 
-def confirm_booking_by_verification_id(client: Client, verification_id):
-    response = (client.rpc("confirm_verification", {"verf_id": verification_id})
+async def confirm_booking_by_verification_id(client: Client, verification_id):
+    response =await (client.rpc("confirm_verification", {"verf_id": verification_id})
                 .execute())
     return response.data
 
@@ -236,7 +236,7 @@ async def increment_customer_requests_in_db(client: Client, user_id, customer_cl
     # the column is nullable, so a row written before the default was in place
     # (or with an explicit null) reads back as None rather than 0
     current = response.data[0]["total_requests"] or 0
-    response = (
+    response = await (
             client.table("customers_data")
             .update({"total_requests": current + 1})
             .eq("customer_client_side_id", customer_client_side_id)
@@ -262,7 +262,7 @@ async def save_customer_client_side_id_in_db(client: Client, user_id, customer_c
         raise ValueError(f"client side id not saved")
     return response.data[0]
 
-def save_customer_chat(client: Client, user_id, customer_client_side_id, user_ai_chat):
+async def save_customer_chat(client: Client, user_id, customer_client_side_id, user_ai_chat):
     # read-modify-write, same as increment_customer_requests_in_db: postgrest can't
     # express `messages = messages || $1`, so the whole transcript is read back and
     # sent again on every turn. Two overlapping queries from the same customer can
@@ -271,7 +271,7 @@ def save_customer_chat(client: Client, user_id, customer_client_side_id, user_ai
     # business_id is matched as well as the client side id, so this doubles as the
     # ownership check - a client side id belonging to another business matches no
     # row and never gets written to
-    response = (
+    response = await (
             client.table("customers_data")
             .select("messages")
             .eq("customer_client_side_id", customer_client_side_id)
@@ -290,7 +290,7 @@ def save_customer_chat(client: Client, user_id, customer_client_side_id, user_ai
         existing = [existing]
     existing.append(user_ai_chat)
 
-    response = (
+    response = await (
             client.table("customers_data")
             .update({"messages": existing})
             .eq("customer_client_side_id", customer_client_side_id)
