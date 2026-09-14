@@ -4,38 +4,10 @@ from services.supabase_db_functions import get_thread_id_from_supabase, save_cus
 import json
 from agents.agent import agentic_workflow
 from agents.graph import setup_graph
-from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 import os
 from dotenv import load_dotenv
 load_dotenv()
-
-def run_inference(query: str, user: dict, supabase_client):
-    user_id = user["id"]
-    client = get_orchestrator_client()
-    kb_agent = get_kb_agent(user_id, supabase_client)
-    booking_agent = get_booking_agent(user_id, supabase_client)
-    agent = agentic_workflow(llm_client=client, kb_agent=kb_agent, bk_agent=booking_agent, setup_graph=setup_graph)
-    graph_builder = agent.get_graph()
-    DB_URI = os.getenv("DATABASE_URL") 
-    thread_id = get_thread_id_from_supabase(supabase_client, user_id)
-    with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
-        checkpointer.setup()
-        graph = graph_builder.compile(checkpointer=checkpointer)
-
-        result = graph.invoke({
-           "messages": [{"role": "user", "content": query}],
-           "tool_calls": [],
-           "knowledge_base_agent_output": "",
-           "booking_agent_output": "",
-           "return_to_user_decision": False,
-           "response_to_user": "",
-           "count": 0
-        },
-        {"configurable": {"thread_id": thread_id}},
-                              )
-
-        return result
 
 async def run_inference_with_stream(query: str, user: dict, supabase_client, customer_client_side_id=None): #should get thread-id from links table
     # customer_client_side_id is only set on the published /c/ route - the dashboard

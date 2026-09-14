@@ -33,9 +33,10 @@ async def get_url(user: dict = Depends(check_session_exists)):
     try:
         user_id = user["id"]
         access_token = user["access_token"]
-        supabase_client = get_supabase_client_with_token(access_token)
-        url = get_url_from_supabase(supabase_client, user_id)
-        published = get_published_status_from_supabase(supabase_client, user_id)
+        supabase_client = await get_supabase_client_with_token(access_token)
+        # might need to go and change database functions to suppport async I/O
+        url = await get_url_from_supabase(supabase_client, user_id)
+        published = await get_published_status_from_supabase(supabase_client, user_id)
         return {
                 "url": url,
                 "published": published
@@ -78,8 +79,8 @@ async def set_publish(status: PublishStatus, user: dict = Depends(check_session_
     try:
         user_id = user["id"]
         access_token = user["access_token"]
-        supabase_client = get_supabase_client_with_token(access_token)
-        published = set_published_status_in_supabase(supabase_client, user_id, status.published)
+        supabase_client = await get_supabase_client_with_token(access_token)
+        published = await set_published_status_in_supabase(supabase_client, user_id, status.published)
         return {"published": published}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
@@ -90,8 +91,8 @@ async def get_slots_data(user: dict = Depends(check_session_exists)):
     try:
         user_id = user["id"]
         access_token = user["access_token"]
-        supabase_client = get_supabase_client_with_token(access_token)
-        slots = get_slots_from_supabase(supabase_client, user_id)
+        supabase_client = await get_supabase_client_with_token(access_token)
+        slots = await get_slots_from_supabase(supabase_client, user_id)
         return {"slots": slots}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
@@ -101,8 +102,8 @@ async def create_slot(creation: SlotCreation, user: dict = Depends(check_session
     try:
         user_id = user["id"]
         access_token = user["access_token"]
-        supabase_client = get_supabase_client_with_token(access_token)
-        slot = insert_slot_into_supabase(
+        supabase_client = await get_supabase_client_with_token(access_token)
+        slot = await insert_slot_into_supabase(
             supabase_client,
             user_id,
             creation.time_start.isoformat(),
@@ -118,8 +119,8 @@ async def delete_slot(deletion: SlotDeletion, user: dict = Depends(check_session
     try:
         user_id = user["id"]
         access_token = user["access_token"]
-        supabase_client = get_supabase_client_with_token(access_token)
-        deleted = delete_slot_from_supabase(supabase_client, user_id, deletion.slot_id)
+        supabase_client = await get_supabase_client_with_token(access_token)
+        deleted = await delete_slot_from_supabase(supabase_client, user_id, deletion.slot_id)
         return {"deleted": deleted}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
@@ -133,8 +134,8 @@ async def get_record_count(user: dict = Depends(check_session_exists)):
     try:
         user_id = user["id"]
         access_token = user["access_token"]
-        supabase_client = get_supabase_client_with_token(access_token)
-        ingestions = get_ingestions_from_supabase(supabase_client, user_id)
+        supabase_client = await get_supabase_client_with_token(access_token)
+        ingestions = await get_ingestions_from_supabase(supabase_client, user_id)
         return [
             {"ingestion_id": row["ing_id"], "source_name": row["source_name"]}
             for row in ingestions
@@ -151,12 +152,12 @@ async def delete_ingested_source(deletion: IngestionDeletion, user: dict = Depen
     try:
         user_id = user["id"]
         access_token = user["access_token"]
-        supabase_client = get_supabase_client_with_token(access_token)
-        record_ids = get_record_ids_from_supabase(supabase_client, user_id, deletion.ingestion_id)
-        namespace_name = get_namespacename_from_supabase(supabase_client, user_id)
+        supabase_client = await get_supabase_client_with_token(access_token)
+        record_ids = await get_record_ids_from_supabase(supabase_client, user_id, deletion.ingestion_id)
+        namespace_name = await get_namespacename_from_supabase(supabase_client, user_id)
         ingestion_obj = Ingestion(supabase_client, user_id)
         vectors_deleted = ingestion_obj.delete_ingestion_source(record_ids, namespace_name)
-        delete_ingestion_from_supabase(supabase_client, user_id, deletion.ingestion_id)
+        await delete_ingestion_from_supabase(supabase_client, user_id, deletion.ingestion_id)
         return {
             "deleted": {
                 "ingestion_id": deletion.ingestion_id,
@@ -171,20 +172,20 @@ async def delete_ingested_source(deletion: IngestionDeletion, user: dict = Depen
 @router.post("/c/query-agent/{url_string}")
 async def customer_query(url_string: str, inf: QueryRequest):
     try:
-        client = get_supabase_anon_client()
-        business_id = get_business_id_from_url_string(client, url_string)
+        client = await get_supabase_anon_client()
+        business_id = await get_business_id_from_url_string(client, url_string)
         publish_status = get_published_status_from_supabase(client, business_id)
         if publish_status is not True:
             raise BadRequestError("URL not published")
         user = {"id": business_id}
-        customer_cs_id = get_customer_client_side_id(client, business_id, inf.unique_id)
+        customer_cs_id = await get_customer_client_side_id(client, business_id, inf.unique_id)
         # saves the client side id, but doesnt save messages
         if len(customer_cs_id) == 0:
-            response = save_customer_client_side_id_in_db(client, business_id, inf.unique_id)
+            response = await save_customer_client_side_id_in_db(client, business_id, inf.unique_id)
         # counted before the stream starts: StreamingResponse returns immediately
         # and the generator runs after this handler is gone, so an increment
         # placed after it would never be reached
-        increment_customer_requests_in_db(client, business_id, inf.unique_id)
+        await increment_customer_requests_in_db(client, business_id, inf.unique_id)
         return StreamingResponse(
             run_inference_with_stream(inf.query, user, client, inf.unique_id),
             media_type="text/event-stream",

@@ -17,14 +17,14 @@ def ingest_documents(documents_list, namespace, supabase_client=None, user_id=No
     except Exception as e:
         raise ToolException(f"Error in using tool: {e}")
 
-@tool    
-def retrieve_documents(query, config: RunnableConfig):
+@tool
+async def retrieve_documents(query, config: RunnableConfig):
     """retrieve relevant documents by putting the query in
     this function, use one namespace at a time """
     try:
         user_id = config["configurable"]["user_id"]
         supabase_client = config["configurable"]["supabase_client"]
-        namespace_name = get_namespacename_from_supabase(supabase_client, user_id)
+        namespace_name = await get_namespacename_from_supabase(supabase_client, user_id)
         retrieval_obj = Retrieval()
         results =retrieval_obj.retrieve(query, namespace_name)
         return results

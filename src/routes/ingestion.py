@@ -14,8 +14,8 @@ router = APIRouter()
 async def ingest_pdf(file: UploadFile = File(...), user: dict = Depends(check_session_exists)):
     # the dependency already validated the JWT; resolve this user's namespace
     # the same way retrieve_documents does (scoped to their own business_id)
-    supabase_client = get_supabase_client_with_token(user["access_token"])
-    namespace_name = get_namespacename_from_supabase(supabase_client, user["id"])
+    supabase_client = await get_supabase_client_with_token(user["access_token"])
+    namespace_name = await get_namespacename_from_supabase(supabase_client, user["id"])
     tmp_dir = tempfile.mkdtemp()
     try:
         tmp_path = os.path.join(tmp_dir, file.filename)
