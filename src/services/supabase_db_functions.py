@@ -114,10 +114,10 @@ async def delete_slot_from_supabase(client: Client, user_id, slot_id):
         raise ValueError(f"No slot {slot_id} found for user {user_id}")
     return response.data[0]
 
-def get_pinecone_id_from_supabase(client: Client, user_id):
+async def get_pinecone_id_from_supabase(client: Client, user_id):
     # the ingestions row has to point at this business's pinecone_data_table row,
     # which is the same row get_namespacename_from_supabase reads the namespace from
-    response = (client.table("pinecone_data_table")
+    response = await (client.table("pinecone_data_table")
                 .select("pc_id")
                 .eq("business_id", user_id)
                 .execute()
@@ -127,10 +127,10 @@ def get_pinecone_id_from_supabase(client: Client, user_id):
         pc_id = response.data[0]["pc_id"]
     return pc_id
 
-def insert_ingestion_into_supabase(client: Client, user_id, pc_id, source_name, record_ids):
+async def insert_ingestion_into_supabase(client: Client, user_id, pc_id, source_name, record_ids):
     # business_id is written explicitly: the insert policy on public.ingestions
     # checks auth.uid() = business_id, so the column can't be left out
-    response = (client.table("ingestions")
+    response = await (client.table("ingestions")
                 .insert({
                     "business_id": user_id,
                     "pc_id": pc_id,

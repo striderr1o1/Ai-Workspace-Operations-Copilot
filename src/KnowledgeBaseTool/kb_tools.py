@@ -4,15 +4,15 @@ from services.supabase_db_functions import get_namespacename_from_supabase
 from langchain.tools import tool
 from langchain_core.tools import ToolException
 from langchain_core.runnables import RunnableConfig
-from pinecone import Pinecone
+from pinecone import AsyncPinecone
 import os
-def ingest_documents(documents_list, namespace, supabase_client=None, user_id=None):
+async def ingest_documents(documents_list, namespace, supabase_client=None, user_id=None):
     """Ingestion documents in this function as a list when
     you get a list of documents to ingest"""
     try:
         ingestion_obj = Ingestion(supabase_client, user_id)
         for doc_path in documents_list:
-            ingestion_obj.ingest_document(doc_path, namespace)
+            await ingestion_obj.ingest_document(doc_path, namespace)
         return
     except Exception as e:
         raise ToolException(f"Error in using tool: {e}")
@@ -41,21 +41,13 @@ async def retrieve_documents(query, config: RunnableConfig):
 #    namespaces = list(stats.namespaces.keys())
 #    return namespaces
 
-def create_namespace_from_name(namespacename):
-    pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
-    index = pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
-    ns = index.create_namespace(
-        name=namespacename,
-      )
+async def create_namespace_from_name(namespacename):
+    async with AsyncPinecone(api_key=os.environ.get('PINECONE_API_KEY')) as pc:
+        index = await pc.index(host=os.environ.get('INDEX_URL_PINECONE'))
+        # the index client holds its own connection pool - closing pc does not
+        # close it, so it needs its own `async with`
+        async with index:
+            ns = await index.create_namespace(
+                name=namespacename,
+              )
     return
-
-def return_record_count(namespacename):
-    pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
-    index = pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
-    stats = index.describe_index_stats()
-    namespace_stats = stats.namespaces.get(namespacename)
-    count = namespace_stats.vector_count if namespace_stats else 0
-    record_names = []
-    for ids in index.list(namespace=namespacename):
-        record_names.extend(ids)
-    return {"count": count, "record_names": record_names}

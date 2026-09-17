@@ -156,7 +156,7 @@ async def delete_ingested_source(deletion: IngestionDeletion, user: dict = Depen
         record_ids = await get_record_ids_from_supabase(supabase_client, user_id, deletion.ingestion_id)
         namespace_name = await get_namespacename_from_supabase(supabase_client, user_id)
         ingestion_obj = Ingestion(supabase_client, user_id)
-        vectors_deleted = ingestion_obj.delete_ingestion_source(record_ids, namespace_name)
+        vectors_deleted = await ingestion_obj.delete_ingestion_source(record_ids, namespace_name)
         await delete_ingestion_from_supabase(supabase_client, user_id, deletion.ingestion_id)
         return {
             "deleted": {
