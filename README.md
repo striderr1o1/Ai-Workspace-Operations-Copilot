@@ -111,8 +111,6 @@ flowchart LR
     K --> O
     B --> O
     O --> E((END))
-    K --> E
-    B --> E
 ```
 
 Every edge above is `tool_call_node` choosing one of four targets. It reads
@@ -170,18 +168,6 @@ Instead the booking tool writes `status = 'pending'` and emails a link built fro
 `verification_id`. Clicking it hits `/booking-confirmation/{verification_id}`, which calls the
 `confirm_verification` RPC. State lives in the row, not in a suspended graph.
 
-### The orchestrator swallows its own exceptions — deliberately
-
-On failure `orchestrator()` returns a state dict containing **only**
-`return_to_user_decision: True` and an error string in `response_to_user`. No `tool_calls`
-key at all. That exact shape is load-bearing in two places:
-
-- `run_empty_agent_response` and `run_irrelevant` check `if "tool_calls" not in output` and
-  score it a **failure** — otherwise a swallowed crash is indistinguishable from a correct
-  "give up gracefully" decision.
-- `build_report` passes the raw state delta through as `actual`, so the frontend shows the
-  error rather than an empty row.
-
 ### Structured output is provider-sensitive
 
 The orchestrator uses `instructor` in `Mode.JSON_SCHEMA` over OpenRouter, and
@@ -215,11 +201,6 @@ instance — it's an async context manager, so it can't live in a sync `__init__
 client gets its own `async with`, because closing the parent client does **not** close the
 index's connection pool. Upserts batch at 100, deletes at 1000 (Pinecone's delete-by-id cap).
 
-### Four Supabase clients, none interchangeable
-
-See [Security / multi-tenancy](#7-security--multi-tenancy). The short version: signing a user
-in on a shared client would leave every later request in the process carrying that user's
-JWT.
 
 ---
 
@@ -238,12 +219,8 @@ JWT.
 | Transactional email | Brevo REST API |
 | Tracing | LangSmith (`wrap_openai` on the orchestrator client) |
 | Web framework | FastAPI, SSE streaming |
-| Dev UI | Streamlit (see the caveat in §10) |
 | Deployment | Docker — `python:3.11-slim`, uvicorn from `src/`, binds `$PORT` |
 
-Model names are **hardcoded in two places**, not configured: the orchestrator model is an
-argument inside `agents/agent.py:23`, the sub-agent model is the `ChatGroq(...)` call at
-`agents/agent_config.py:24`.
 
 ---
 
@@ -626,7 +603,6 @@ separate from `exceptions.py` so the exception module stays framework-free.
 
 Honest inventory of things a reader will otherwise trip over:
 
-- **`ui/streamlit_ui.py` is stale** — predates auth, won't work against the current API (§10).
 - **`evals/routing_dataset.json`** (50 examples, `copilot-routing-v1`) is not loaded by
   anything. `evaluation_engine.py` reads only `orchestrator_dataset.json`.
 - **`evaluation_engine._get_agent` calls the now-async `get_supabase_client_with_token`
