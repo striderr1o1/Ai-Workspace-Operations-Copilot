@@ -106,8 +106,6 @@ flowchart LR
     S((START)) --> O[orchestrator]
     O --> K[knowledge_base_agent]
     O --> B[booking_agent]
-    K --> B
-    B --> K
     K --> O
     B --> O
     O --> E((END))
