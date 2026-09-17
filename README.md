@@ -330,11 +330,8 @@ are all `auth.uid() = business_id`. Elsewhere the recorded policies are permissi
 `using (true)`. On those tables RLS is not a second line of defence; application scoping is
 the only one.
 
-Two more things worth stating plainly:
+worth stating plainly:
 
-- **`SUPABASE_KEY` is the service_role key.** On authenticated paths the `postgrest.auth()`
-  override means requests still run as the user. On any path that uses a client *without*
-  that override, they run as full admin and bypass RLS.
 - **The published customer chat runs the whole graph on the anon client.** The booking agent
   therefore writes to `slots` as `anon`, scoped only by the `business_id` resolved from the
   URL slug. The recorded DDL grants anon `select` and `insert` on `slots` but no `update`;
@@ -499,17 +496,6 @@ Static-served frontend from the [separate repo](https://github.com/striderr1o1/o
 `src/main.py` allow-lists `localhost:5173`, `localhost:3000`, `127.0.0.1` on both, `null`, and
 `https://striderr1o1.github.io`. Append `?api=http://127.0.0.1:8000` to point a deployed page
 at a local server.
-
-### Streamlit dev UI — read this first
-
-```bash
-streamlit run ui/streamlit_ui.py
-```
-
-`ui/streamlit_ui.py` **predates authentication** and has not been updated. It posts to
-`/query-agent` and `/ingestion` with no `Authorization` header and no `unique_id`, so against
-the current API it gets 401s and 422s. It's kept as a reference for the SSE event shape; the
-real client is the frontend repo.
 
 ---
 
