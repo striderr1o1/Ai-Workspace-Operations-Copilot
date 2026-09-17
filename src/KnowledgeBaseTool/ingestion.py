@@ -4,7 +4,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 import os
 from dotenv import load_dotenv
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import AsyncPinecone, ServerlessSpec
 from utils.exceptions import IngestionError
 from services.supabase_db_functions import (
     get_pinecone_id_from_supabase,
@@ -24,36 +24,43 @@ class Ingestion:
         ##self.embedding = OllamaEmbeddings(
         ##    model=os.environ.get("EMBEDDING_MODEL")
         ##)
-        self.pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
+        # AsyncPinecone is an async context manager, so it can't be built once
+        # here in a sync __init__ - each pinecone call opens one per operation,
+        # the same way retrieval.py does.
+        self.api_key = os.environ.get('PINECONE_API_KEY')
         self.index_name = os.environ.get('PINECONE_INDEX_NAME')
-        self._create_index()
+        # _create_index has to be awaited, so it moved out of __init__ into
+        # ingest_document; this flag keeps it to one check per object the way
+        # constructing it used to
+        self._index_ready = False
 
-    def ingest_document(self, filepath, namespace):
+    async def ingest_document(self, filepath, namespace):
          #main function
+        await self._create_index()
         self.filepath = filepath
         doc = self._load_document()
-        chunks = self._create_chunks(doc) 
+        chunks = self._create_chunks(doc)
         str_chunks, metadatas = self._convert_doc_chunks_to_str(chunks)
         embeddings_list = self._create_embeddings_from_chunks(str_chunks)
         vectors_list, vector_ids = self._preparing_ingestions(embeddings_list, str_chunks, metadatas)
         #send to database with record name
-        self._store_in_vectordb(vectors_list, namespace)
-        self._record_ingestion(vector_ids)
+        await self._store_in_vectordb(vectors_list, namespace)
+        await self._record_ingestion(vector_ids)
         return
 
-    def _record_ingestion(self, vector_ids): #write the ingestion row in supabase
+    async def _record_ingestion(self, vector_ids): #write the ingestion row in supabase
         # no client means the caller didn't pass one (e.g. an internal call with no
         # signed-in user) - the pinecone upsert is still the point, so don't block it
         if self.supabase_client is None or not self.user_id:
             return
         try:
-            pc_id = get_pinecone_id_from_supabase(self.supabase_client, self.user_id)
+            pc_id = await get_pinecone_id_from_supabase(self.supabase_client, self.user_id)
             if not pc_id:
                 raise IngestionError(f'No pinecone_data_table row for user {self.user_id}')
             # source_name is the uploaded filename, not the temp path it was copied to
             source_name = os.path.basename(self.filepath) if self.filepath else None
             vector_ids_json = {"vector_ids_list": vector_ids}
-            return insert_ingestion_into_supabase(
+            return await insert_ingestion_into_supabase(
                 self.supabase_client, self.user_id, pc_id, source_name, vector_ids_json
             )
         except IngestionError:
@@ -61,17 +68,21 @@ class Ingestion:
         except Exception as e:
             raise IngestionError(f'Error in ingestion.py _record_ingestion(). Details: {e}')
 
-    def delete_ingestion_source(self, record_ids, namespace_name): #drop one source's vectors
+    async def delete_ingestion_source(self, record_ids, namespace_name): #drop one source's vectors
         try:
             # pinecone caps delete-by-id at 1000 ids per call, so a large pdf's
             # chunk list has to go in batches the same way the upsert does
             batch_size = 1000
-            index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
-            for i in range(0, len(record_ids), batch_size):
-                index.delete(
-                    ids = record_ids[i: i+batch_size],
-                    namespace = namespace_name
-                )
+            async with AsyncPinecone(api_key=self.api_key) as pc:
+                index = await pc.index(host=os.environ.get('INDEX_URL_PINECONE'))
+                # the index client holds its own connection pool - closing pc
+                # does not close it, so it needs its own `async with`
+                async with index:
+                    for i in range(0, len(record_ids), batch_size):
+                        await index.delete(
+                            ids = record_ids[i: i+batch_size],
+                            namespace = namespace_name
+                        )
 
             return len(record_ids)
         except Exception as e:
@@ -128,23 +139,27 @@ class Ingestion:
         except Exception as e:
             raise IngestionError(f'Error in creating embeddings, ingestion.py,_create_embeddings_from_chunks(). Details: {e}')
 
-    def _create_index(self): #initialize index if not already
+    async def _create_index(self): #initialize index if not already
+        if self._index_ready:
+            return
         try:
-            if not self.pc.has_index(self.index_name):
-                self.pc.create_index(
-                    name=self.index_name,
-                    vector_type="dense",
-                    dimension=1024, #according to model
-                    metric="cosine",
-                    spec=ServerlessSpec(
-                        cloud="aws",
-                        region="us-east-1"
-                    ),
-                    deletion_protection="disabled",
-                    tags={
-                        "environment": "development"
-                    }
-                )
+            async with AsyncPinecone(api_key=self.api_key) as pc:
+                if not await pc.has_index(self.index_name):
+                    await pc.create_index(
+                        name=self.index_name,
+                        vector_type="dense",
+                        dimension=1024, #according to model
+                        metric="cosine",
+                        spec=ServerlessSpec(
+                            cloud="aws",
+                            region="us-east-1"
+                        ),
+                        deletion_protection="disabled",
+                        tags={
+                            "environment": "development"
+                        }
+                    )
+            self._index_ready = True
         except Exception:
             raise IngestionError('Error in creating index pinecone, ingestion.py _create_index()')
 
@@ -169,16 +184,20 @@ class Ingestion:
             raise IngestionError(f'Error in ingestion.py _preparing_ingestions()')
 
         
-    def _store_in_vectordb(self, vectors_list, namespace_name): #upsert in pinecone vector store
+    async def _store_in_vectordb(self, vectors_list, namespace_name): #upsert in pinecone vector store
         try:
             batch_size = 100
-            index = self.pc.Index(host=os.environ.get('INDEX_URL_PINECONE'))
-            for i in range(0, len(vectors_list), batch_size):
-                index.upsert(
-                    namespace = namespace_name,
-                    vectors = vectors_list[i: i+batch_size]
-                )
-    
+            async with AsyncPinecone(api_key=self.api_key) as pc:
+                index = await pc.index(host=os.environ.get('INDEX_URL_PINECONE'))
+                # every batch goes through the one index client, so the
+                # connection pool is opened and torn down once per document
+                async with index:
+                    for i in range(0, len(vectors_list), batch_size):
+                        await index.upsert(
+                            namespace = namespace_name,
+                            vectors = vectors_list[i: i+batch_size]
+                        )
+
             return
         except Exception as e:
             raise IngestionError(f'Ingestion.py -> Error in storing in vector store, _store_in_vectordb(). Details: {e}')
