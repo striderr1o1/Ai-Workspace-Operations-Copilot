@@ -25,13 +25,13 @@ async def run_inference_with_stream(query: str, user: dict, supabase_client, cus
     # otherwise, if business owner running from the dashboard, thread_id = business_id
     if admin == True:
         thread_id = business_id
-
-    thread_id = f"{customer_client_side_id}:{business_id}"
+    else:
+        thread_id = f"{customer_client_side_id}:{business_id}"
     
     async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
         await checkpointer.setup()
         graph = graph_builder.compile(checkpointer=checkpointer)
-
+        config = {"configurable": {"thread_id": thread_id}}
         response_to_user = ""
         async for chunk in graph.astream(
             {
@@ -43,12 +43,10 @@ async def run_inference_with_stream(query: str, user: dict, supabase_client, cus
                 "response_to_user": "",
                 "count": 0
             },
-        {"configurable": {"thread_id": thread_id}},
+        config,
             stream_mode="updates"
         ):
             for node_name, update in chunk.items():
-                print("update: ", update)
-                print(node_name, "\n")
                 if node_name=="orchestrator":
                     yield f"data: {json.dumps({'event': 'agent calls', 'node': node_name, 'data': update['tool_calls'] if update['tool_calls'] else []})}\n\n"
                 if node_name=="knowledge_base_agent":
