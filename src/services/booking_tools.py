@@ -11,7 +11,7 @@ async def fetch_room_data(config: RunnableConfig):
         # per-request client, threaded via RunnableConfig; admits the authenticated role
         supabase = config["configurable"]["supabase_client"]
         response = await (supabase.table("slots")
-        .select("slotid, time_start, time_end, occupier_email")
+        .select("slotid, time_start, time_end")
         .eq("business_id", user_id)
         .execute())
         return response
@@ -32,6 +32,11 @@ async def update_room_data(slot_id: str, occupier_email: str, config: RunnableCo
     try:
         user_id = config["configurable"]["user_id"]
         supabase = config["configurable"]["supabase_client"]
+        # the occupier_email IS NULL check has to happen in the same statement as the
+        # write, not as a separate select beforehand - a read-then-write here would be
+        # a TOCTOU race letting two concurrent bookings both pass the check before
+        # either commits. Scoping the update itself to open slots makes Postgres
+        # enforce it atomically via the row lock: only one concurrent update can match.
         response = await (supabase.table("slots")
                     .update({
                         "occupier_email": occupier_email,
@@ -39,11 +44,15 @@ async def update_room_data(slot_id: str, occupier_email: str, config: RunnableCo
                     })
                     .eq("slotid", slot_id)
                     .eq("business_id", user_id)
+                    .is_("occupier_email", "null")
                     .execute())
         # an update matching nothing still comes back 200 with an empty list, so
-        # without this a bad slotid would silently "succeed" and send no email
+        # without this a bad slotid would silently "succeed" and send no email.
+        # This now also covers the slot existing but already being taken, since the
+        # is_(null) filter excludes it the same way a missing slotid would.
         if not response.data:
-            raise ValueError(f"No slot {slot_id} belonging to this business") # times come from the row rather than the agent, so the email can only
+            raise ValueError(f"Slot {slot_id} is not available for this business (already booked or does not exist)")
+        # times come from the row rather than the agent, so the email can only
         # describe the slot that was actually assigned
         slot = response.data[0]
         verf_id = slot["verification_id"]
