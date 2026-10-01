@@ -156,10 +156,11 @@ client as a parameter instead of constructing it.
 
 ### Booking confirms by email webhook, not a LangGraph interrupt
 
-`langgraph.interrupt` was the obvious fit and was **rejected** (`self_docs/24thaug.md`): a
-business has exactly one `thread_id`, so pausing the checkpoint mid-booking would collide as
-soon as two customers book at once, and checkpoint memory isn't meant to be held open that
-long.
+`langgraph.interrupt` was the obvious fit and was **rejected** (`self_docs/24thaug.md`): at the
+time every business ran on a single shared `thread_id`, so pausing the checkpoint mid-booking
+would collide the moment two customers booked at once. Threads are now split per customer
+(see §11), but the other half of the rejection still holds — checkpoint memory isn't meant to
+be held open waiting on someone to click a link, however long that takes.
 
 Instead the booking tool writes `status = 'pending'` and emails a link built from the row's
 `verification_id`. Clicking it hits `/booking-confirmation/{verification_id}`, which calls the
@@ -227,7 +228,7 @@ index's connection pool. Upserts batch at 100, deletes at 1000 (Pinecone's delet
 
 ```
 validate caller  →  build per-request Supabase client  →  build KB + booking agents
-bound to (user_id, client)  →  resolve the business's thread_id  →  compile the graph
+bound to (user_id, client)  →  compute the thread id  →  compile the graph
 against AsyncPostgresSaver  →  stream node updates as SSE
 ```
 
@@ -525,16 +526,15 @@ from the conversation itself.
 ### Checkpointing and the thread model
 
 `setup_graph` returns an **uncompiled** builder. `dependencies.py` compiles it per request
-against `AsyncPostgresSaver.from_conn_string(DATABASE_URL)`, keyed on the business's
-`links.thread_id`. `checkpointer.setup()` runs on every request, creating the
-`checkpoints`, `checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` tables on
-first use.
+against `AsyncPostgresSaver.from_conn_string(DATABASE_URL)`, keyed on a thread id computed at
+request time rather than read from storage: `customer_client_side_id:business_id` on the
+public route, plain `business_id` when the business itself is querying from the dashboard
+(`admin=True`). `checkpointer.setup()` runs on every request, creating the `checkpoints`,
+`checkpoint_blobs`, `checkpoint_writes` and `checkpoint_migrations` tables on first use.
 
-**A known consequence:** the thread id is resolved from the *business's* `links` row, and the
-public route calls the same function with `user = {"id": business_id}`. So every customer of
-a business shares one LangGraph thread. This is the same constraint that ruled out
-`langgraph.interrupt` for booking confirmation (§4). Per-customer threads would need
-`customers_data.customer_client_side_id` folded into the thread key.
+This replaced an earlier design where the thread id was read from the business's `links` row,
+which meant every customer of a business shared one LangGraph thread — the same constraint
+that originally ruled out `langgraph.interrupt` for booking confirmation (§4).
 
 ### Database schema
 
@@ -560,9 +560,9 @@ Its `pc_id` PK is what `ingestions.pc_id` references.
 `business_id` FK, and `record_ids_json` holding `{"vector_ids_list": [...]}`. The reader also
 accepts a bare list, so rows written before that wrapper still delete cleanly.
 
-**`links`** — `link_id` PK, `url` (the 8-char slug), `thread_id` uuid, `business_id` FK,
-`published` bool default true. Both this row and the `pinecone_data_table` row are created by
-triggers at signup.
+**`links`** — `link_id` PK, `url` (the 8-char slug), `thread_id` uuid (vestigial — nothing
+reads it anymore, see §11 Checkpointing), `business_id` FK, `published` bool default true.
+Both this row and the `pinecone_data_table` row are created by triggers at signup.
 
 **`customers_data`** — `customer_id`, `customer_client_side_id` (**globally unique**, not
 unique per business), `business_id` FK, `total_requests`, `messages` jsonb. Ownership checks
@@ -602,3 +602,6 @@ Honest inventory of things a reader will otherwise trip over:
 - **`self_docs/may24.md` describes a `clinics` / `appointments` skeleton that was never
   built.** The `self_docs/<date>.md` files are a working task list and record intent as much
   as fact — verify against the code before relying on any of it.
+- **`links.thread_id` is dead.** `get_thread_id_from_supabase` in `supabase_db_functions.py`
+  used to read it and is now commented out; thread ids are computed in `dependencies.py`
+  instead (§11). The column itself hasn't been dropped from the table — just nothing reads it.
